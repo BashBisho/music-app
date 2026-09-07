@@ -1,0 +1,27 @@
+diff --git a/node_modules/@missingcore/audio-metadata/lib/module/libs/expo-file-system.mjs b/node_modules/@missingcore/audio-metadata/lib/module/libs/expo-file-system.mjs
+index 60de9cd..2f2595f 100644
+--- a/node_modules/@missingcore/audio-metadata/lib/module/libs/expo-file-system.mjs
++++ b/node_modules/@missingcore/audio-metadata/lib/module/libs/expo-file-system.mjs
+@@ -20,7 +20,7 @@ var EncodingType = /*#__PURE__*/function (EncodingType) {
+  */
+ let ExpoFileSystem;
+ try {
+-  ExpoFileSystem = require('expo-file-system');
++  ExpoFileSystem = require('expo-file-system/legacy');
+ } catch {}
+ export default ExpoFileSystem;
+ //# sourceMappingURL=expo-file-system.mjs.map
+\ No newline at end of file
+diff --git a/node_modules/@missingcore/audio-metadata/src/libs/expo-file-system.ts b/node_modules/@missingcore/audio-metadata/src/libs/expo-file-system.ts
+index 313d63e..8055967 100644
+--- a/node_modules/@missingcore/audio-metadata/src/libs/expo-file-system.ts
++++ b/node_modules/@missingcore/audio-metadata/src/libs/expo-file-system.ts
+@@ -57,7 +57,7 @@ type FileSystem = {
+ let ExpoFileSystem: FileSystem | undefined;
+ 
+ try {
+-  ExpoFileSystem = require('expo-file-system');
++  ExpoFileSystem = require('expo-file-system/legacy');
+ } catch {}
+ 
+ export default ExpoFileSystem;
