@@ -13,11 +13,13 @@ import {
   useAudioPlayer,
   useAudioPlayerStatus,
   requestNotificationPermissionsAsync,
-  setAudioModeAsync
+  setAudioModeAsync,
+  preload,
+
 } from 'expo-audio';
 
 import {getAllSongs} from '../Helpers/SongManager'
-import { getCachedSongs, cacheSongs } from '../Helpers/AsyncManager';
+import { getCachedSongs, cacheSongs, getCurrentSong } from '../Helpers/AsyncManager';
 
 const AudioContext = createContext(null);
 
@@ -27,6 +29,16 @@ export function AudioProvider({ children }) {
   const status = useAudioPlayerStatus(player);
   const [songs, setSongs] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [lockScreenActive, setLockScreenActive] = useState(false);
+  
+
+  useEffect(() => {
+    if (!status.didJustFinish) return;
+
+    if (currentIndex + 1 < songs.length) {
+        playSong(currentIndex + 1);
+    }
+  }, [status.didJustFinish]);
 
   const currentSong =
     currentIndex >= 0
@@ -55,10 +67,31 @@ export function AudioProvider({ children }) {
       });
     }
 
+    async function getSong() {
+      const curr = await getCurrentSong();
+      playSong(curr);
+    }
+
+ 
+  
+    getSong();
     setupAudio();
     getSongs();
   }, [])
 
+
+  const updateLockScreen = (metadata) => {
+    if (lockScreenActive) {
+        player.updateLockScreenMetadata(metadata);
+    } else {
+        player.setActiveForLockScreen(true, metadata, {
+            showSeekBackward: true,
+            showSeekForward: true,
+        });
+
+        setLockScreenActive(true);
+    }
+  };
 
   function playSong(index) {
     console.log("what");
@@ -72,14 +105,12 @@ export function AudioProvider({ children }) {
 
     player.replace(song.uri);
 
-    player.setActiveForLockScreen(true, {
+    
+    updateLockScreen({
       title: song.name,
       artist: song.artist,
       albumTitle: song.album,
       artworkUrl: song.artwork,
-    },{
-      showSeekBackward: true,
-      showSeekForward: true
     });
 
     player.play();
@@ -115,7 +146,7 @@ export function AudioProvider({ children }) {
   }
 
 
-  function previousSong() {
+  function prevSong() {
     if (songs.length === 0) return;
 
     const previousIndex =
@@ -148,7 +179,7 @@ export function AudioProvider({ children }) {
         pause,
         togglePlay,
         nextSong,
-        previousSong,
+        prevSong,
 
         getSongs
       }}

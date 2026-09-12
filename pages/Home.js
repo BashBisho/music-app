@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Button} from 'react-native';
+import { StyleSheet, Text, View, Button, TouchableOpacity} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AudioPlayer, useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio'
 import { Directory,  File, Paths } from 'expo-file-system'; 
@@ -13,12 +13,13 @@ import { AudioProvider, useAudio } from './Components/AudioContext';
 import getImage from '../assets/defaultImage';
 import { FlatList } from 'react-native-gesture-handler';
 import Track from './Components/Track';
+import Player from './Components/Player';
 
 export default function App({navigation}) {
 
     const [pic, setPic] = useState("");
     
-    const { player, status, songs, playSong, currentSong} = useAudio();
+    const { player, songs, playSong, currentSong, togglePlay} = useAudio();
 
     const blurTargetRef = useRef(null);
 
@@ -40,58 +41,60 @@ export default function App({navigation}) {
         return file.uri;
     }
     
-   
-  return (
-    <View style={styles.container} >
-        <BlurTargetView
-            ref={blurTargetRef}
-            style={{
-                position: 'absolute',
-                width: '100%',
-                height: '100%',
-                top: 0,
-            }}
-        >
-            <Image
-                source={{ uri: currentSong.artwork }}
+    const play = (currentSong?.artwork ?? getImage());
+
+    return (
+        <View style={styles.container} >
+            <BlurTargetView
+                ref={blurTargetRef}
                 style={{
+                    position: 'absolute',
                     width: '100%',
                     height: '100%',
+                    top: 0,
+                }}
+            >
+                <Image
+                    source={{ uri: play }}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                    }}
+                />
+            </BlurTargetView>
+
+            <BlurView
+                blurTarget={blurTargetRef}
+                blurMethod="dimezisBlurViewSdk31Plus"
+                intensity={100}
+                tint='dark'
+                style={{
+                    position: 'absolute',
+                    opacity: 0.9,
+                    width: '100%',
+                    height: '100%',
+                    top: 0,
                 }}
             />
-        </BlurTargetView>
 
-        <BlurView
-            blurTarget={blurTargetRef}
-            blurMethod="dimezisBlurViewSdk31Plus"
-            intensity={100}
-            tint='dark'
-            style={{
-                position: 'absolute',
-                opacity: 0.9,
-                width: '100%',
-                height: '100%',
-                top: 0,
-            }}
-        />
+            <Header name={"Home"} right={{name: "settings", backgroundColor: "#DDD", color: "#222", onPress: () => navigation.navigate("Settings")}} />
+            <StatusBar style="light"/>
+            <FlatList
+                data={songs}
+                style={{width: "92%"}}
+                ItemSeparatorComponent={() => <View style={{height: 14}} />}
+                renderItem={({item, index}) => {
+                    return (
+                        <Track song={item} index={index} onPress={() => playSong(index)}/>
+                    )
+                }}
+                ListFooterComponent={() => <View style={{height:120}}/>}
+            />
 
-        <Header name={"Home"} right={{name: "settings", backgroundColor: "#DDD", color: "#222", onPress: () => navigation.navigate("Settings")}} />
-        <StatusBar style="dark"/>
-        <FlatList
-            data={songs}
-            style={{width: "92%"}}
-            ItemSeparatorComponent={() => <View style={{height: 10}} />}
-            renderItem={({item, index}) => {
-                return (
-                    <Track song={item} index={index} onPress={() => playSong(index)}/>
-                )
-            }}
-        
-        />
-        
-    
-    </View>
-  );
+            <Player navigation={navigation} />
+
+        </View>
+    );
 }
 const styles = StyleSheet.create({
   container: {

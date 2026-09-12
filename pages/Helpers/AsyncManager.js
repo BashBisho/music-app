@@ -43,3 +43,15 @@ export async function getCachedSongs() {
     return (JSON.parse(songs) ? JSON.parse(songs) : []);
 }
 
+export async function setCurrentSong(index) {
+    await AsyncStorage.setItem("@currentSong", index);
+}
+
+
+export async function getCurrentSong() {
+    const curr = await AsyncStorage.getItem("@currentSong");
+    
+    return (curr ? curr : 0);
+}
+
+

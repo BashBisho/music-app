@@ -13,10 +13,11 @@ import {addPath, getPaths, removePath} from './Helpers/AsyncManager'
 import Feather from '@react-native-vector-icons/feather';
 import Header from './Components/Header';
 import { clearMusicCache } from './Helpers/SongManager';
+import getImage from '../assets/defaultImage';
+import Player from './Components/Player';
+export default function Settings({navigation}) {
 
-export default function App() {
-
-    const { player, status, getSongs } = useAudio();
+    const { player, status, getSongs, currentSong } = useAudio();
     const [ paths, setPths ] = useState([]);
     
     const blurTargetRef = useRef(null);
@@ -64,83 +65,81 @@ export default function App() {
         getAllPaths();
     }, [])
 
-  return (
-    <View style={styles.container} >
-        <BlurTargetView
-            ref={blurTargetRef}
-            style={{
-                position: 'absolute',
-                width: '100%',
-                height: '100%',
-                top: 0,
-            }}
-        >
-            <Image
-                source={{ uri: "" }}
+    console.log(navigation)
+    const play = (currentSong?.artwork ?? getImage());
+    
+    return (
+        <View style={styles.container} >
+            <BlurTargetView
+                ref={blurTargetRef}
                 style={{
+                    position: 'absolute',
                     width: '100%',
                     height: '100%',
+                    top: 0,
+                }}
+            >
+                <Image
+                    source={{ uri: play }}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                    }}
+                />
+            </BlurTargetView>
+
+            <BlurView
+                blurTarget={blurTargetRef}
+                blurMethod="dimezisBlurViewSdk31Plus"
+                intensity={100}
+                tint='dark'
+                style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    top: 0,
                 }}
             />
-        </BlurTargetView>
-
-        <BlurView
-            blurTarget={blurTargetRef}
-            blurMethod="dimezisBlurViewSdk31Plus"
-            intensity={7}
-            tint='dark'
-            style={{
-                position: 'absolute',
-                width: '100%',
-                height: '100%',
-                top: 0,
-            }}
-        />
-        <StatusBar style="dark"/>
+            <StatusBar style="light"/>
 
 
-        <Header name={"Settings"} right={{name: "slash", backgroundColor: "#CC2936", color: "#FFF", onPress: () => clearMusicCache()}} />
+            <Header name={"Settings"} right={{name: "slash", backgroundColor: "#CC2936", color: "#FFF", onPress: () => clearMusicCache()}}  left={{name: "chevron-left", backgroundColor: "#DDD", color: "#222", onPress: () => { if(navigation.canGoBack()) navigation.goBack()} }}/>
 
-        <FlatList
-            data={paths}
-            ItemSeparatorComponent={() => <View style={{height: 10}}/>}
-            style={{width: "90%"}}
-            contentContainerStyle={{ }}
-            renderItem={({item, index}) => {
-                return (
-                    <View style={{width: "100%", height: 40, display: "flex", flexDirection: "row", gap: 10}}>
-                        <View style={{flex: 10, backgroundColor: "#DDD", borderRadius: 5, display: "flex", justifyContent: "center", alignItems: "center"}}>
-                            <Text style={{color: "#222", fontSize: 22}}>{(new Directory(item)).name}</Text>
+            <FlatList
+                data={paths}
+                ItemSeparatorComponent={() => <View style={{height: 10}}/>}
+                style={{width: "90%"}}
+                contentContainerStyle={{ }}
+                renderItem={({item, index}) => {
+                    return (
+                        <View style={{width: "100%", height: 40, display: "flex", flexDirection: "row", gap: 10}}>
+                            <View style={{flex: 10, backgroundColor: "#DDD", borderRadius: 5, display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                <Text style={{color: "#222", fontSize: 22, fontFamily: "SF-Reg"}}>{(new Directory(item)).name}</Text>
+                            </View>
+                            <TouchableOpacity onPress={async () => { await removePath(index); await getAllPaths(); }} style={{width: 40, height: 40, borderRadius: 5, backgroundColor: "#CC2936", display: "flex", justifyContent: "center", alignItems: "center"}}> 
+                                <Feather name="minus" color={"#FFF"} size={20} />
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity onPress={async () => { await removePath(index); await getAllPaths(); }} style={{width: 40, height: 40, borderRadius: 5, backgroundColor: "#CC2936", display: "flex", justifyContent: "center", alignItems: "center"}}> 
-                            <Feather name="minus" color={"#FFF"} size={20} />
-                        </TouchableOpacity>
-                    </View>
-                )   
-            }}
-            ListFooterComponent={() => {
-                return (
-                    <>
-                        <View style={{height: 10}}/>
-                          <TouchableOpacity onPress={async() => { await pickFolder(); await getAllPaths();} } activeOpacity={.9}  style={{width: "100%", height: 40, backgroundColor: "#4E937A", borderRadius: 5, display: "flex", gap: 5, justifyContent: "center", alignItems: "center", flexDirection: "row"}}> 
-                            <Feather name="plus" size={22} color={"#fff"}/>
-                            <Text style={{fontSize: 16, color: "#FFF", marginBottom: 1}}>Add Path</Text>
-                        </TouchableOpacity>
-                    </>
-                  
-                )
-            }}
-        />
-    
+                    )   
+                }}
+                ListFooterComponent={() => {
+                    return (
+                        <>
+                            <View style={{height: 10}}/>
+                            <TouchableOpacity hitSlop={10} onPress={async() => { await pickFolder(); await getAllPaths();} } activeOpacity={.9}  style={{width: "100%", height: 40, backgroundColor: "#4E937A", borderRadius: 5, display: "flex", gap: 5, justifyContent: "center", alignItems: "center", flexDirection: "row"}}> 
+                                <Feather name="plus" size={22} color={"#fff"}/>
+                                <Text style={{fontSize: 18, fontFamily:"SF-Medium", color: "#FFF", marginBottom: 1}}>Add Path</Text>
+                            </TouchableOpacity>
+                        </>
+                    
+                    )
+                }}
+            />
 
+            <Player />
         
-        <Button
-            title="Choose Folder"
-            onPress={pickFolder}
-        />
-        
-    </View>
-  );
+        </View>
+    );
 }
 const styles = StyleSheet.create({
   container: {

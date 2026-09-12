@@ -90,7 +90,7 @@ async function saveArtwork(artwork, id) {
 // Process one song
 // ---------------------------------------------------------
 
-async function processSong(file, songs) {
+async function processSong(file, songs, index) {
 
     const uri = file.uri;
 
@@ -163,7 +163,8 @@ async function processSong(file, songs) {
             artist: data.albumArtist ?? data.artist ?? "Unknown",
             track: data.track ?? 0,
             year: data.year ?? 0,
-            artwork: artworkUri
+            artwork: artworkUri,
+            index
         };
 
         return obj;
@@ -183,7 +184,8 @@ async function processSong(file, songs) {
             artist: "Unknown",
             track: 0,
             year: 0,
-            artwork: null
+            artwork: null,
+            index
         };
     }
 }
@@ -238,7 +240,7 @@ export async function getAllSongs() {
         const batch = musicFiles.slice(i,i + CONCURRENCY);
 
 
-        const results = await Promise.all(batch.map(file => processSong(file, songs)));
+        const results = await Promise.all(batch.map((file, index) => processSong(file, songs, i + index)));
 
         for (const song of results) songs[song.uri] = song;
         

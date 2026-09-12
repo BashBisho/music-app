@@ -47,7 +47,10 @@
       ],
       "expo-image",
       "expo-asset",
-      "@react-native-vector-icons/feather"
+      "@react-native-vector-icons/feather",
+      "@react-native-vector-icons/fontawesome6",
+      "expo-font",
+      "expo-splash-screen"
     ],
     "extra": {
       "eas": {
