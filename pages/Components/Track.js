@@ -1,0 +1,21 @@
+import { StatusBar } from 'expo-status-bar'
+import {View, Text, Image, TouchableOpacity } from 'react-native'
+import constants from 'expo-constants'
+import Feather from '@react-native-vector-icons/feather' 
+import { useAudio } from './AudioContext'
+
+export default function Track({song, index, onPress}) {
+
+
+    return (
+        <TouchableOpacity onPress={() => onPress()} activeOpacity={0.8} style={{width: "100%", height: 50, backgroundColor: "#22222200", display: "flex", flexDirection: "row", gap: 10}}>
+            <Image style={{width: 50, height: 50, borderRadius: 10}} src={song.artwork}/>
+            <View style={{display: "flex", justifyContent: "center", alignItems: "flex-start", flexDirection: "column"}}>
+                <Text style={{fontSize: 16, color: "#DDD"}}>{song.name}</Text>
+                <Text style={{fontSize: 12, color: "#DDD"}}>{song.artist}</Text>
+            </View>
+        </TouchableOpacity>
+    )
+
+
+}

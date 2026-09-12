@@ -7,37 +7,66 @@ import {
   useState,
 } from 'react';
 
+import { registerForPushNotificationsAsync } from '../Helpers/Notifications'
+
 import {
   useAudioPlayer,
   useAudioPlayerStatus,
+  requestNotificationPermissionsAsync,
+  setAudioModeAsync
 } from 'expo-audio';
+
+import {getAllSongs} from '../Helpers/SongManager'
+import { getCachedSongs, cacheSongs } from '../Helpers/AsyncManager';
 
 const AudioContext = createContext(null);
 
 export function AudioProvider({ children }) {
-  // ONE player for the entire application
+
   const player = useAudioPlayer(null);
-
-  // Player's live state
   const status = useAudioPlayerStatus(player);
-
-  // Your music library
   const [songs, setSongs] = useState([]);
-
-  // Currently playing song
   const [currentIndex, setCurrentIndex] = useState(-1);
 
-  // Everything you want to preserve about the track
   const currentSong =
     currentIndex >= 0
       ? songs[currentIndex]
       : null;
 
+  async function getSongs() {
+
+    const items = await getCachedSongs();
+    setSongs(items);
+
+    const nw = await cacheSongs();
+    setSongs(nw);
+  } 
+
+  useEffect(() => {
+    async function setupAudio() {
+      await registerForPushNotificationsAsync();
+      await requestNotificationPermissionsAsync();
+
+      await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          shouldRouteThroughEarpiece: true,
+          interruptionMode: "doNotMix",
+      });
+    }
+
+    setupAudio();
+    getSongs();
+  }, [])
+
 
   function playSong(index) {
+    console.log("what");
+
     if (!songs[index]) return;
 
     const song = songs[index];
+    console.log("WANT TO: ", index, " ", song);
 
     setCurrentIndex(index);
 
@@ -47,7 +76,10 @@ export function AudioProvider({ children }) {
       title: song.name,
       artist: song.artist,
       albumTitle: song.album,
-      artworkUrl: song.artworkUri,
+      artworkUrl: song.artwork,
+    },{
+      showSeekBackward: true,
+      showSeekForward: true
     });
 
     player.play();
@@ -117,6 +149,8 @@ export function AudioProvider({ children }) {
         togglePlay,
         nextSong,
         previousSong,
+
+        getSongs
       }}
     >
       {children}

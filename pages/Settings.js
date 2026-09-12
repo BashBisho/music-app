@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Button} from 'react-native';
+import { StyleSheet, Text, View, Button, TouchableOpacity, FlatList} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AudioPlayer, useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio'
 import { Directory,  File, Paths } from 'expo-file-system'; 
@@ -9,52 +9,30 @@ import { ImageBackground, Image } from 'expo-image';
 import { registerForPushNotificationsAsync } from './Helpers/Notifications'
 import { BlurView, BlurTargetView } from 'expo-blur';
 import { useAudio } from './Components/AudioContext';
+import {addPath, getPaths, removePath} from './Helpers/AsyncManager'
+import Feather from '@react-native-vector-icons/feather';
+import Header from './Components/Header';
+import { clearMusicCache } from './Helpers/SongManager';
+
 export default function App() {
 
-    const [pic, setPic] = useState("");
-    const { player, status } = useAudio();
-
+    const { player, status, getSongs } = useAudio();
+    const [ paths, setPths ] = useState([]);
+    
     const blurTargetRef = useRef(null);
 
-    async function prepareNotificationArtwork(dataUri) {
-        const base64 = dataUri.split(',')[1];
-
-        const file = new File(Paths.cache, 'notification-artwork.jpg');
-
-        if (file.exists) {
-            file.delete();
-        }
-
-        file.create();
-        file.write(base64, {
-            encoding: 'base64',
-        });
-
-        return file.uri;
-    }
     
-    useEffect(() => {
-            
-    
-        async function setupAudio() {
-            await registerForPushNotificationsAsync();
-            await setAudioModeAsync({
-                playsInSilentMode: true,
-                shouldPlayInBackground: true,
-                shouldRouteThroughEarpiece: true
-            });
-        }
-
-        setupAudio();
-    }, []);
-
     const pickFolder = async () => {
         const result = await Directory.pickDirectoryAsync();
+
+        if(!result.exists) return;
 
         const files = result.list();
 
         const randomIndex = Math.floor(Math.random() * files.length);
         const item = files[randomIndex];
+
+        await addPath(result.uri);
 
        // console.log(item);
         console.log("EXT:", item.extension);
@@ -64,31 +42,27 @@ export default function App() {
             ['album', 'albumArtist', 'artist', 'artwork', 'name', 'track', 'year']
         );
 
-        
-   
-        setPic(metadata.metadata.artwork);
         player.replace(item.uri);
 
         const { album, albumArtist, artist, artwork, name, track, year } = metadata.metadata;
 
-        console.log(album, artist, name);
-
-        const art = await prepareNotificationArtwork(artwork);
-        await player.setActiveForLockScreen(true, {
-            title: name,
-            artist: artist,
-            albumTitle: album,
-            artworkUrl: art,
-        }, {
-            showSeekBackward: true,
-            showSeekForward: true,
-        });
         
-        player.play();
-
         console.log(status.duration);
 
     };
+
+    async function getAllPaths() {
+        const pths = await getPaths();
+        console.log("GETTING");
+        setPths(pths);
+        getSongs();
+        console.log(pths);
+    }
+
+    useEffect(() => {
+       
+        getAllPaths();
+    }, [])
 
   return (
     <View style={styles.container} >
@@ -102,7 +76,7 @@ export default function App() {
             }}
         >
             <Image
-                source={{ uri: pic }}
+                source={{ uri: "" }}
                 style={{
                     width: '100%',
                     height: '100%',
@@ -113,7 +87,7 @@ export default function App() {
         <BlurView
             blurTarget={blurTargetRef}
             blurMethod="dimezisBlurViewSdk31Plus"
-            intensity={pic != "" ? 70 : 0}
+            intensity={7}
             tint='dark'
             style={{
                 position: 'absolute',
@@ -122,18 +96,48 @@ export default function App() {
                 top: 0,
             }}
         />
-
-
         <StatusBar style="dark"/>
 
-        <Text>Open up App.js to start working on your app!</Text>
+
+        <Header name={"Settings"} right={{name: "slash", backgroundColor: "#CC2936", color: "#FFF", onPress: () => clearMusicCache()}} />
+
+        <FlatList
+            data={paths}
+            ItemSeparatorComponent={() => <View style={{height: 10}}/>}
+            style={{width: "90%"}}
+            contentContainerStyle={{ }}
+            renderItem={({item, index}) => {
+                return (
+                    <View style={{width: "100%", height: 40, display: "flex", flexDirection: "row", gap: 10}}>
+                        <View style={{flex: 10, backgroundColor: "#DDD", borderRadius: 5, display: "flex", justifyContent: "center", alignItems: "center"}}>
+                            <Text style={{color: "#222", fontSize: 22}}>{(new Directory(item)).name}</Text>
+                        </View>
+                        <TouchableOpacity onPress={async () => { await removePath(index); await getAllPaths(); }} style={{width: 40, height: 40, borderRadius: 5, backgroundColor: "#CC2936", display: "flex", justifyContent: "center", alignItems: "center"}}> 
+                            <Feather name="minus" color={"#FFF"} size={20} />
+                        </TouchableOpacity>
+                    </View>
+                )   
+            }}
+            ListFooterComponent={() => {
+                return (
+                    <>
+                        <View style={{height: 10}}/>
+                          <TouchableOpacity onPress={async() => { await pickFolder(); await getAllPaths();} } activeOpacity={.9}  style={{width: "100%", height: 40, backgroundColor: "#4E937A", borderRadius: 5, display: "flex", gap: 5, justifyContent: "center", alignItems: "center", flexDirection: "row"}}> 
+                            <Feather name="plus" size={22} color={"#fff"}/>
+                            <Text style={{fontSize: 16, color: "#FFF", marginBottom: 1}}>Add Path</Text>
+                        </TouchableOpacity>
+                    </>
+                  
+                )
+            }}
+        />
+    
+
+        
         <Button
             title="Choose Folder"
             onPress={pickFolder}
         />
-        {pic != "" && <Text>Found</Text> 
-        }
-
         
     </View>
   );
@@ -141,6 +145,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "red",
     alignItems: 'center',
     justifyContent: 'center',
   },
