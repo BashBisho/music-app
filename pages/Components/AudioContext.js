@@ -31,7 +31,6 @@ export function AudioProvider({ children }) {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [lockScreenActive, setLockScreenActive] = useState(false);
   
-
   useEffect(() => {
     if (!status.didJustFinish) return;
 
@@ -46,6 +45,7 @@ export function AudioProvider({ children }) {
       : null;
 
   async function getSongs() {
+
 
     const items = await getCachedSongs();
     setSongs(items);
@@ -116,6 +116,9 @@ export function AudioProvider({ children }) {
     player.play();
   }
 
+  function seekTo(time) {
+    player.seekTo(time);
+  }
 
   function pause() {
     player.pause();
@@ -177,6 +180,7 @@ export function AudioProvider({ children }) {
         playSong,
         play,
         pause,
+        seekTo,
         togglePlay,
         nextSong,
         prevSong,

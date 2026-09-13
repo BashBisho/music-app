@@ -8,41 +8,63 @@ import { getAudioMetadata } from '@missingcore/audio-metadata';
 import { ImageBackground, Image } from 'expo-image';
 import { BlurView, BlurTargetView } from 'expo-blur';
 import Header from './Components/HeaderModern';
-
 import { AudioProvider, useAudio } from './Components/AudioContext';
 import getImage from '../assets/defaultImage';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 import format from './Helpers/HelperFunctions';
+
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+} from 'react-native-reanimated';
+
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { scheduleOnRN } from 'react-native-worklets';
+
 export default function App({navigation}) {
 
-    const [pic, setPic] = useState("");
     
-    const { player, songs, playSong, currentSong, togglePlay, prevSong, nextSong} = useAudio();
+    const { player, songs, playSong, currentSong, togglePlay, prevSong, nextSong, seekTo} = useAudio();
 
     const status = useAudioPlayerStatus(player);
 
     const blurTargetRef = useRef(null);
     const {width, height} = Dimensions.get("screen");
-    async function prepareNotificationArtwork(dataUri) {
-
-        const base64 = (dataUri ? dataUri.split(',')[1] : getImage());
-
-        const file = new File(Paths.cache, 'notification-artwork.jpg');
-
-        if (file.exists) {
-            file.delete();
-        }
-
-        file.create();
-        file.write(base64, {
-            encoding: 'base64',
-        });
-
-        return file.uri;
-    }
-    
     const play = (currentSong?.artwork ?? getImage());
 
+   const barWidth = width * 0.8;
+    const progress = useSharedValue(0);
+
+    useEffect(() => {
+        if (status.duration > 0) {
+            progress.value = status.currentTime / status.duration;
+        }
+    }, [status.currentTime, status.duration]);
+
+    const seekAt = (x) => {
+        const value = Math.max(0, Math.min(x / barWidth, 1));
+        player.seekTo(value * status.duration);
+        progress.value = value;
+    };
+
+    const tap = Gesture.Tap()
+        .onEnd((e) => {
+            scheduleOnRN(seekAt, e.x);
+        });
+
+    const pan = Gesture.Pan()
+        .onUpdate((e) => {
+            progress.value = Math.max(0, Math.min(e.x / barWidth, 1));
+        })
+        .onEnd(() => {
+            scheduleOnRN(seekAt, progress.value * barWidth);
+        });
+
+    const gesture = Gesture.Race(tap, pan);
+
+    const progressStyle = useAnimatedStyle(() => ({
+        transform: [{ scaleX: progress.value }],
+    }));
     return (
         <View style={styles.container} >
             <BlurTargetView
@@ -97,15 +119,37 @@ export default function App({navigation}) {
                         <FontAwesome6 size={24} color={"#fff"} name={"forward-step"} iconStyle="solid" />
                     </TouchableOpacity>
                 </View>
-                <View style={{position: "relative", width: "80%"}}>
-                    <View style={{width: `${(status.currentTime/status.duration)*100}%`, height: 5, backgroundColor: "#fff", borderRadius: 1.5, position: "absolute"}}></View>
-                    <View style={{width: `100%`, height: 5, backgroundColor: "#ffffff55", borderRadius: 1.5, marginBottom: 5}}></View>
-                    <View style={{width: "100%", flexDirection: "row", display: "flex", justifyContent: "space-between"}}>
-                        <Text style={{color: "#FFF", fontSize: 16, fontFamily: "SF-Bold"}}>{format(status.currentTime)}</Text>
-                        <Text style={{color: "#FFF", fontSize: 16, fontFamily: "SF-Bold"}}>{format(status.duration)}</Text>
+               <GestureDetector gesture={gesture}>
+                    <View style={{width: "80%", height: 30, justifyContent: "center"}}>
+                        <View style={{
+                            width: "100%",
+                            height: 5,
+                            backgroundColor: "#ffffff55",
+                            borderRadius: 1.5,
+                            overflow: "hidden"
+                        }}>
+                            <Animated.View style={[
+                                {
+                                    width: "100%",
+                                    height: "100%",
+                                    backgroundColor: "#fff",
+                                    borderRadius: 1.5,
+                                    transformOrigin: "left",
+                                },
+                                progressStyle
+                            ]}/>
+                        </View>
                     </View>
+                </GestureDetector>
+                <View style={{width: "80%", flexDirection: "row", justifyContent: "space-between"}}>
+                    <Text style={{color: "#FFF", fontSize: 16, fontFamily: "SF-Bold"}}>
+                        {format(status.currentTime)}
+                    </Text>
+
+                    <Text style={{color: "#FFF", fontSize: 16, fontFamily: "SF-Bold"}}>
+                        {format(status.duration)}
+                    </Text>
                 </View>
-                
             </View>
 
         </View>
