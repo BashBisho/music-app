@@ -2,11 +2,14 @@ import TcpSocket from "react-native-tcp-socket";
 
 let socket;
 let artworkBuffer = "";
+export function getPort() {
+    return 8080;
+}
 
 export function connectToPhone(ip, onState) {
     socket = TcpSocket.createConnection({
         host: ip,
-        port: 5555
+        port: getPort()
     }, () => {
         console.log("Connected to phone");
     });

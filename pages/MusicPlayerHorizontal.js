@@ -26,7 +26,7 @@ import { lockAsync, OrientationLock}  from 'expo-screen-orientation'
 export default function App({navigation}) {
 
     
-    const { player, songs, playSong, currentSong, togglePlay, prevSong, nextSong, seekTo} = useAudio();
+    const { player, songs, playSong, currentSong, togglePlay, prevSong, nextSong, seekTo, currentArtwork, remoteStatus} = useAudio();
     const [sender, setSender] = useState(false);
 
     useEffect(() => {
@@ -38,20 +38,20 @@ export default function App({navigation}) {
 
     const blurTargetRef = useRef(null);
     const {width, height} = Dimensions.get("screen");
-    const play = (currentSong?.artwork ?? getImage());
+    const play = (currentArtwork ?? getImage());
 
     const barWidth = width * 0.8;
     const progress = useSharedValue(0);
 
     useEffect(() => {
-        if (status.duration > 0) {
-            progress.value = status.currentTime / status.duration;
+        if (remoteStatus.duration > 0) {
+            progress.value = remoteStatus.currentTime / remoteStatus.duration;
         }
-    }, [status.currentTime, status.duration]);
+    }, [remoteStatus.currentTime, remoteStatus.duration]);
 
     const seekAt = (x) => {
         const value = Math.max(0, Math.min(x / barWidth, 1));
-        player.seekTo(value * status.duration);
+        seekTo(value * remoteStatus.duration);
         progress.value = value;
     };
 
@@ -123,8 +123,8 @@ export default function App({navigation}) {
                             <FontAwesome6 size={24} color={"#fff"} name={"backward-step"} iconStyle="solid" />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => togglePlay()} style={{width: 50, height: 50, borderRadius: 5, backgroundColor: "#FFFFFF44", display: "flex", justifyContent: "center", alignItems: "center"}}>
-                            {!status.playing && <FontAwesome6 size={24} color={"#FFF"} name={"play"} iconStyle="solid" /> }
-                            {status.playing && <FontAwesome6 size={24} color={"#FFF"} name={"pause"} iconStyle="solid" /> }
+                            {!remoteStatus.playing && <FontAwesome6 size={24} color={"#FFF"} name={"play"} iconStyle="solid" /> }
+                            {remoteStatus.playing && <FontAwesome6 size={24} color={"#FFF"} name={"pause"} iconStyle="solid" /> }
                         </TouchableOpacity>
                         <TouchableOpacity  onPress={() => nextSong()} style={{width: 35, height: 35, borderRadius: 5, backgroundColor: "#FFFFFF11", display: "flex", justifyContent: "center", alignItems: "center"}}>
                             <FontAwesome6 size={24} color={"#fff"} name={"forward-step"} iconStyle="solid" />
@@ -154,11 +154,11 @@ export default function App({navigation}) {
                         </GestureDetector>
                         <View style={{width: "80%", flexDirection: "row", justifyContent: "space-between"}}>
                             <Text style={{color: "#FFF", fontSize: 16, fontFamily: "SF-Bold"}}>
-                                {format(status.currentTime)}
+                                {format(remoteStatus.currentTime)}
                             </Text>
 
                             <Text style={{color: "#FFF", fontSize: 16, fontFamily: "SF-Bold"}}>
-                                {format(status.duration)}
+                                {format(remoteStatus.duration)}
                             </Text>
                         </View>
                 </View>

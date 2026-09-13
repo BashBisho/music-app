@@ -1,7 +1,9 @@
 import TcpSocket from "react-native-tcp-socket";
+import { getPort } from "./RemoteClient";
 
 let server;
 let client;
+let isSendingArtwork = false;
 
 export function startServer(onCommand) {
     if (server) return;
@@ -51,13 +53,13 @@ export function startServer(onCommand) {
     });
 
     server.listen({
-        port: 5555,
+        port: getPort(),
         host: "0.0.0.0"
     });
 }
 
 export function sendState(state) {
-    if (!client) return;
+    if (!client || isSendingArtwork) return;
 
     try {
         client.write(JSON.stringify(state) + "\n");
@@ -66,21 +68,28 @@ export function sendState(state) {
     }
 }
 
-export function sendArtwork(artwork) {
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+export async function sendArtwork(artwork) {
     if (!client || !artwork) return;
 
-    const chunkSize = 2000;
+    isSendingArtwork = true;
+    const chunkSize = 4000;
 
     try {
         client.write(JSON.stringify({
             type: "artwork-start"
         }) + "\n");
+        
+        await sleep(10);
 
         for (let i = 0; i < artwork.length; i += chunkSize) {
             client.write(JSON.stringify({
                 type: "artwork-chunk",
                 data: artwork.slice(i, i + chunkSize)
             }) + "\n");
+            
+            //await sleep(5);
         }
 
         client.write(JSON.stringify({
@@ -88,5 +97,7 @@ export function sendArtwork(artwork) {
         }) + "\n");
     } catch (e) {
         console.log("Artwork write error:", e);
+    } finally {
+        isSendingArtwork = false;
     }
 }

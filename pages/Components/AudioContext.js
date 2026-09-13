@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -34,6 +35,8 @@ import {
   sendCommand
 } from '../Helpers/RemoteClient';
 
+import getImage from '../../assets/defaultImage';
+
 const AudioContext = createContext(null);
 
 export function AudioProvider({ children }) {
@@ -42,7 +45,7 @@ export function AudioProvider({ children }) {
 
   const [songs, setSongs] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
-  const [currentSong, setCurrentSong] = useState(null);
+  const [currentSong, setCurrentSong] = useState({});
   const [currentArtwork, setCurrentArtwork] = useState(null);
   const [lockScreenActive, setLockScreenActive] = useState(false);
   const [isSource, setIsSource] = useState(true);
@@ -53,7 +56,34 @@ export function AudioProvider({ children }) {
     duration: 0
   });
 
+  const songsRef = useRef([]);
+  const currentIndexRef = useRef(-1);
+  const playingRef = useRef(false);
+  const statusRef = useRef(realStatus);
+  const playerRef = useRef(null);
+
+  useEffect(() => {
+      playingRef.current = realStatus.playing;
+  }, [realStatus.playing]);
+  
   const status = isSource ? realStatus : remoteStatus;
+
+
+  useEffect(() => {
+      playerRef.current = player;
+  }, [player]);
+
+  useEffect(() => {
+    songsRef.current = songs;
+  }, [songs]);
+  
+  useEffect(() => {
+    statusRef.current = realStatus;
+  }, [realStatus]);
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
 
   useEffect(() => {
     if (!isSource) return;
@@ -65,32 +95,54 @@ export function AudioProvider({ children }) {
   }, [realStatus.didJustFinish]);
 
   useEffect(() => {
+    if (!isSource) return;
+
+    const interval = setInterval(() => {
+      const status = statusRef.current;
+
+      sendState({
+        type: "state",
+        index: currentIndexRef.current,
+        song: {
+          ...currentSong,
+          artwork: currentSong.artwork ? true : null
+        },
+        playing: status.playing,
+        position: status.currentTime,
+        duration: status.duration
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isSource, currentSong]);
+
+  useEffect(() => {
     async function gt() {
       const type = await getType();
-
       setIsSource(!type);
 
       if (type == 0) {
         startServer((cmd) => {
           console.log("Command: ", cmd);
+          console.log("type: ", cmd.type);
 
           if (cmd.type === "play") {
-            player.play();
+            playerRef.current.play();
           }
 
           if (cmd.type === "pause") {
-            player.pause();
+            playerRef.current.pause();
           }
 
+         // console.log(playerRef.current.currentStatus)
           if (cmd.type === "toggle") {
-            if (realStatus.playing) {
-              player.pause();
-            } else {
-              player.play();
-            }
+            if(playingRef.current) {
+              playerRef.current.pause();
+            } else playerRef.current.play();
           }
 
           if (cmd.type === "next") {
+            console.log("what");
             nextSong();
           }
 
@@ -99,7 +151,7 @@ export function AudioProvider({ children }) {
           }
 
           if (cmd.type === "seek") {
-            player.seekTo(cmd.position);
+            playerRef.current.seekTo(cmd.position);
           }
 
           if (cmd.type === "playSong") {
@@ -111,7 +163,8 @@ export function AudioProvider({ children }) {
           console.log("State: ", state);
 
           if (state.type === "artwork") {
-            setCurrentArtwork(state.artwork);
+            if (state.artwork)
+              setCurrentArtwork(state.artwork);
             return;
           }
 
@@ -121,6 +174,7 @@ export function AudioProvider({ children }) {
 
           if (state.index !== undefined) {
             setCurrentIndex(state.index);
+            currentIndexRef.current = state.index;
           }
 
           setRemoteStatus({
@@ -166,12 +220,14 @@ export function AudioProvider({ children }) {
 
   useEffect(() => {
     async function loadArtwork() {
-      if (!isSource || !currentSong?.artwork) {
-        setCurrentArtwork(null);
+      if (!isSource) {
+        //setCurrentArtwork(null);
         return;
       }
 
-      const artwork = await getArtworkBase64(currentSong.artwork);
+      const artwork = currentSong.artwork
+        ? await getArtworkBase64(currentSong.artwork)
+        : getImage();
 
       setCurrentArtwork(artwork);
 
@@ -226,10 +282,12 @@ export function AudioProvider({ children }) {
     const items = await getCachedSongs();
 
     setSongs(items);
+    songsRef.current = items;
 
     const nw = await cacheSongs();
 
     setSongs(nw);
+    songsRef.current = nw;
   }
 
   useEffect(() => {
@@ -257,9 +315,9 @@ export function AudioProvider({ children }) {
 
   const updateLockScreen = (metadata) => {
     if (lockScreenActive) {
-      player.updateLockScreenMetadata(metadata);
+      playerRef.current.updateLockScreenMetadata(metadata);
     } else {
-      player.setActiveForLockScreen(true, metadata, {
+      playerRef.current.setActiveForLockScreen(true, metadata, {
         showSeekBackward: true,
         showSeekForward: true,
       });
@@ -274,19 +332,19 @@ export function AudioProvider({ children }) {
         type: "playSong",
         index: index
       });
-
       return;
     }
 
-    if (!songs[index]) return;
+    if (!songsRef.current[index]) return;
 
-    const song = songs[index];
+    const song = songsRef.current[index];
+    playerRef.current.replace(song.uri);
 
+    currentIndexRef.current = index;
     setCurrentIndex(index);
     setCurrentSong(song);
     setCurrentArtwork(null);
 
-    player.replace(song.uri);
 
     updateLockScreen({
       title: song.name,
@@ -295,7 +353,7 @@ export function AudioProvider({ children }) {
       artworkUrl: song.artwork,
     });
 
-    player.play();
+    playerRef.current.play();
   }
 
   function seekTo(time) {
@@ -304,11 +362,10 @@ export function AudioProvider({ children }) {
         type: "seek",
         position: time
       });
-
       return;
     }
 
-    player.seekTo(time);
+    playerRef.current.seekTo(time);
   }
 
   function pause() {
@@ -316,11 +373,10 @@ export function AudioProvider({ children }) {
       sendCommand({
         type: "pause"
       });
-
       return;
     }
 
-    player.pause();
+    playerRef.current.pause();
   }
 
   function play() {
@@ -328,11 +384,10 @@ export function AudioProvider({ children }) {
       sendCommand({
         type: "play"
       });
-
       return;
     }
 
-    player.play();
+    playerRef.current.play();
   }
 
   function togglePlay() {
@@ -340,30 +395,33 @@ export function AudioProvider({ children }) {
       sendCommand({
         type: "toggle"
       });
-
       return;
     }
 
     if (realStatus.playing) {
-      player.pause();
+      playerRef.current.pause();
     } else {
-      player.play();
+      playerRef.current.play();
     }
   }
 
   function nextSong() {
+    console.log("in: ", isSource);
+
     if (!isSource) {
       sendCommand({
         type: "next"
       });
-
       return;
     }
 
-    if (songs.length === 0) return;
+    console.log("Ref ", songsRef.current.length);
+    console.log("Current index ref ", currentIndexRef.current);
+
+    if (songsRef.current.length === 0) return;
 
     const nextIndex =
-      (currentIndex + 1) % songs.length;
+      (currentIndexRef.current + 1) % songsRef.current.length;
 
     playSong(nextIndex);
   }
@@ -373,14 +431,13 @@ export function AudioProvider({ children }) {
       sendCommand({
         type: "previous"
       });
-
       return;
     }
 
-    if (songs.length === 0) return;
+    if (songsRef.current.length === 0) return;
 
     const previousIndex =
-      (currentIndex - 1 + songs.length) % songs.length;
+      (currentIndexRef.current - 1 + songsRef.current.length) % songsRef.current.length;
 
     playSong(previousIndex);
   }
@@ -395,6 +452,8 @@ export function AudioProvider({ children }) {
         currentSong,
         currentIndex,
         currentArtwork,
+        remoteStatus,
+
         isSource,
         playSong,
         play,
