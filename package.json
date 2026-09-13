@@ -20,6 +20,7 @@
     "expo-glass-effect": "~57.0.1",
     "expo-image": "~57.0.4",
     "expo-notifications": "~57.0.17",
+    "expo-screen-orientation": "~57.0.2",
     "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
     "music-metadata": "^11.15.0",

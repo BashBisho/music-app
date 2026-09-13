@@ -101,10 +101,10 @@ async function processSong(file, songs, index) {
 
     if (songs[uri]) {
 
-        console.log(
-            "CACHE:",
-            file.name
-        );
+       // console.log(
+        //    "CACHE:",
+       //     file.name
+       // );
 
         return songs[uri];
     }

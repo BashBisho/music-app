@@ -49,6 +49,12 @@
           "enableBackgroundRemoteNotifications": false
         }
       ],
+       [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "DEFAULT"
+        }
+      ],
       "expo-image",
       "expo-asset",
       "@react-native-vector-icons/feather",

@@ -77,7 +77,7 @@ export const ScrubProgressBar = ({
   return (
     <View style={{position: "relative", width: "80%"}}>
         <View style={{width: `${progressRatio*100}%`, height: 5, backgroundColor: "#fff", borderRadius: 1.5, position: "absolute"}}></View>
-        <TouchableOpacity onPress={(event) => console.log(event)}  style={{width: `100%`, height: 5, backgroundColor: "#ffffff55", borderRadius: 1.5, marginBottom: 5}}></TouchableOpacity>
+        <TouchableOpacity style={{width: `100%`, height: 5, backgroundColor: "#ffffff55", borderRadius: 1.5, marginBottom: 5}}></TouchableOpacity>
     </View>
   );
 };

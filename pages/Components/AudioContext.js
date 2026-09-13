@@ -1,5 +1,3 @@
-// AudioContext.js
-
 import {
   createContext,
   useContext,
@@ -14,45 +12,225 @@ import {
   useAudioPlayerStatus,
   requestNotificationPermissionsAsync,
   setAudioModeAsync,
-  preload,
-
 } from 'expo-audio';
 
-import {getAllSongs} from '../Helpers/SongManager'
-import { getCachedSongs, cacheSongs, getCurrentSong } from '../Helpers/AsyncManager';
+import { File } from 'expo-file-system';
+
+import {
+  getCachedSongs,
+  cacheSongs,
+  getCurrentSong,
+  getType
+} from '../Helpers/AsyncManager';
+
+import {
+  startServer,
+  sendState,
+  sendArtwork
+} from '../Helpers/RemoteServer';
+
+import {
+  connectToPhone,
+  sendCommand
+} from '../Helpers/RemoteClient';
 
 const AudioContext = createContext(null);
 
 export function AudioProvider({ children }) {
-
   const player = useAudioPlayer(null);
-  const status = useAudioPlayerStatus(player);
+  const realStatus = useAudioPlayerStatus(player);
+
   const [songs, setSongs] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [currentSong, setCurrentSong] = useState(null);
+  const [currentArtwork, setCurrentArtwork] = useState(null);
   const [lockScreenActive, setLockScreenActive] = useState(false);
-  
+  const [isSource, setIsSource] = useState(true);
+
+  const [remoteStatus, setRemoteStatus] = useState({
+    playing: false,
+    currentTime: 0,
+    duration: 0
+  });
+
+  const status = isSource ? realStatus : remoteStatus;
+
   useEffect(() => {
-    if (!status.didJustFinish) return;
+    if (!isSource) return;
+    if (!realStatus.didJustFinish) return;
 
     if (currentIndex + 1 < songs.length) {
-        playSong(currentIndex + 1);
+      playSong(currentIndex + 1);
     }
-  }, [status.didJustFinish]);
+  }, [realStatus.didJustFinish]);
 
-  const currentSong =
-    currentIndex >= 0
-      ? songs[currentIndex]
-      : null;
+  useEffect(() => {
+    async function gt() {
+      const type = await getType();
+
+      setIsSource(!type);
+
+      if (type == 0) {
+        startServer((cmd) => {
+          console.log("Command: ", cmd);
+
+          if (cmd.type === "play") {
+            player.play();
+          }
+
+          if (cmd.type === "pause") {
+            player.pause();
+          }
+
+          if (cmd.type === "toggle") {
+            if (realStatus.playing) {
+              player.pause();
+            } else {
+              player.play();
+            }
+          }
+
+          if (cmd.type === "next") {
+            nextSong();
+          }
+
+          if (cmd.type === "previous") {
+            prevSong();
+          }
+
+          if (cmd.type === "seek") {
+            player.seekTo(cmd.position);
+          }
+
+          if (cmd.type === "playSong") {
+            playSong(cmd.index);
+          }
+        });
+      } else {
+        connectToPhone("192.168.1.239", (state) => {
+          console.log("State: ", state);
+
+          if (state.type === "artwork") {
+            setCurrentArtwork(state.artwork);
+            return;
+          }
+
+          if (state.type !== "state") return;
+
+          setCurrentSong(state.song);
+
+          if (state.index !== undefined) {
+            setCurrentIndex(state.index);
+          }
+
+          setRemoteStatus({
+            playing: state.playing,
+            currentTime: state.position,
+            duration: state.duration
+          });
+        });
+      }
+    }
+
+    gt();
+  }, []);
+
+  async function getArtworkBase64(path) {
+    if (!path) return null;
+
+    try {
+      const file = new File(path);
+      const base64 = await file.base64();
+
+      const extension = path
+        .split(".")
+        .pop()
+        .toLowerCase();
+
+      let mime = "image/jpeg";
+
+      if (extension === "png") {
+        mime = "image/png";
+      } else if (extension === "webp") {
+        mime = "image/webp";
+      } else if (extension === "gif") {
+        mime = "image/gif";
+      }
+
+      return `data:${mime};base64,${base64}`;
+    } catch (e) {
+      console.log("Artwork error:", e);
+      return null;
+    }
+  }
+
+  useEffect(() => {
+    async function loadArtwork() {
+      if (!isSource || !currentSong?.artwork) {
+        setCurrentArtwork(null);
+        return;
+      }
+
+      const artwork = await getArtworkBase64(currentSong.artwork);
+
+      setCurrentArtwork(artwork);
+
+      if (artwork) {
+        sendArtwork(artwork);
+      }
+    }
+
+    loadArtwork();
+  }, [currentSong, isSource]);
+
+  useEffect(() => {
+    if (!isSource) return;
+    if (!currentSong) return;
+
+    sendState({
+      type: "state",
+      index: currentIndex,
+      song: {
+        ...currentSong,
+        artwork: currentSong.artwork ? true : null
+      },
+      playing: realStatus.playing,
+      position: realStatus.currentTime,
+      duration: realStatus.duration
+    });
+  }, [
+    currentSong,
+    currentIndex
+  ]);
+
+  useEffect(() => {
+    if (!isSource) return;
+    if (!currentSong) return;
+
+    sendState({
+      type: "state",
+      index: currentIndex,
+      song: {
+        ...currentSong,
+        artwork: currentSong.artwork ? true : null
+      },
+      playing: realStatus.playing,
+      position: realStatus.currentTime,
+      duration: realStatus.duration
+    });
+  }, [
+    realStatus.playing
+  ]);
 
   async function getSongs() {
-
-
     const items = await getCachedSongs();
+
     setSongs(items);
 
     const nw = await cacheSongs();
+
     setSongs(nw);
-  } 
+  }
 
   useEffect(() => {
     async function setupAudio() {
@@ -60,10 +238,10 @@ export function AudioProvider({ children }) {
       await requestNotificationPermissionsAsync();
 
       await setAudioModeAsync({
-          playsInSilentMode: true,
-          shouldPlayInBackground: true,
-          shouldRouteThroughEarpiece: true,
-          interruptionMode: "doNotMix",
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        shouldRouteThroughEarpiece: true,
+        interruptionMode: "doNotMix",
       });
     }
 
@@ -72,40 +250,44 @@ export function AudioProvider({ children }) {
       playSong(curr);
     }
 
- 
-  
     getSong();
     setupAudio();
     getSongs();
-  }, [])
-
+  }, []);
 
   const updateLockScreen = (metadata) => {
     if (lockScreenActive) {
-        player.updateLockScreenMetadata(metadata);
+      player.updateLockScreenMetadata(metadata);
     } else {
-        player.setActiveForLockScreen(true, metadata, {
-            showSeekBackward: true,
-            showSeekForward: true,
-        });
+      player.setActiveForLockScreen(true, metadata, {
+        showSeekBackward: true,
+        showSeekForward: true,
+      });
 
-        setLockScreenActive(true);
+      setLockScreenActive(true);
     }
   };
 
   function playSong(index) {
-    console.log("what");
+    if (!isSource) {
+      sendCommand({
+        type: "playSong",
+        index: index
+      });
+
+      return;
+    }
 
     if (!songs[index]) return;
 
     const song = songs[index];
-    console.log("WANT TO: ", index, " ", song);
 
     setCurrentIndex(index);
+    setCurrentSong(song);
+    setCurrentArtwork(null);
 
     player.replace(song.uri);
 
-    
     updateLockScreen({
       title: song.name,
       artist: song.artist,
@@ -117,29 +299,67 @@ export function AudioProvider({ children }) {
   }
 
   function seekTo(time) {
+    if (!isSource) {
+      sendCommand({
+        type: "seek",
+        position: time
+      });
+
+      return;
+    }
+
     player.seekTo(time);
   }
 
   function pause() {
+    if (!isSource) {
+      sendCommand({
+        type: "pause"
+      });
+
+      return;
+    }
+
     player.pause();
   }
 
-
   function play() {
+    if (!isSource) {
+      sendCommand({
+        type: "play"
+      });
+
+      return;
+    }
+
     player.play();
   }
 
-
   function togglePlay() {
-    if (status.playing) {
+    if (!isSource) {
+      sendCommand({
+        type: "toggle"
+      });
+
+      return;
+    }
+
+    if (realStatus.playing) {
       player.pause();
     } else {
       player.play();
     }
   }
 
-
   function nextSong() {
+    if (!isSource) {
+      sendCommand({
+        type: "next"
+      });
+
+      return;
+    }
+
     if (songs.length === 0) return;
 
     const nextIndex =
@@ -148,8 +368,15 @@ export function AudioProvider({ children }) {
     playSong(nextIndex);
   }
 
-
   function prevSong() {
+    if (!isSource) {
+      sendCommand({
+        type: "previous"
+      });
+
+      return;
+    }
+
     if (songs.length === 0) return;
 
     const previousIndex =
@@ -158,25 +385,17 @@ export function AudioProvider({ children }) {
     playSong(previousIndex);
   }
 
-
   return (
     <AudioContext.Provider
       value={{
-        // Player itself
         player,
-
-        // Live player information
         status,
-
-        // Library
         songs,
         setSongs,
-
-        // Current track
         currentSong,
         currentIndex,
-
-        // Controls
+        currentArtwork,
+        isSource,
         playSong,
         play,
         pause,
@@ -184,7 +403,6 @@ export function AudioProvider({ children }) {
         togglePlay,
         nextSong,
         prevSong,
-
         getSongs
       }}
     >
@@ -192,7 +410,6 @@ export function AudioProvider({ children }) {
     </AudioContext.Provider>
   );
 }
-
 
 export function useAudio() {
   return useContext(AudioContext);

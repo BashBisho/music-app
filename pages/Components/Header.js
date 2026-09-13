@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar'
 import {View, Text, Image, TouchableOpacity } from 'react-native'
 import constants from 'expo-constants'
 import Feather from '@react-native-vector-icons/feather' 
+import FontAwesome6 from '@react-native-vector-icons/fontawesome6'
 
 export default function Header({name, right, left, onSettingsPress }) {
 
@@ -11,14 +12,14 @@ export default function Header({name, right, left, onSettingsPress }) {
                 <View style={{flexDirection: "row", display: "flex", justifyContent: "flex-start", alignItems: "center", gap: 10}}>
                     {left &&
                     <TouchableOpacity activeOpacity={.8} style={{width: 30, height: 30, borderRadius: 10, backgroundColor: left.backgroundColor, display: "flex", justifyContent: "center", alignItems: "center"}} onPress={() => left.onPress()}>
-                        <Feather name={left.name} size={16} color={left.color}/>
+                        <FontAwesome6 name={left.name} size={24} color={left.color} iconStyle='solid'/>
                     </TouchableOpacity>
                     }
-                    <Text style={{fontSize: 30, color: "#DDD", marginBottom: 3, fontFamily: "SF-Medium"}}>{name}</Text>
+                    <Text style={{fontSize: 30, color: "#DDD", marginBottom: 3, fontFamily: "SF-Bold"}}>{name}</Text>
                 </View>
                 {right &&
-                    <TouchableOpacity activeOpacity={.8} style={{width: 30, height: 30, borderRadius: 10, backgroundColor: right.backgroundColor, display: "flex", justifyContent: "center", alignItems: "center"}} onPress={() => right.onPress()}>
-                        <Feather name={right.name} size={16} color={right.color}/>
+                    <TouchableOpacity activeOpacity={.8} style={{width: 30, height: 30, borderRadius: 10, backgroundColor: right.backgroundColor, display: "flex", justifyContent: "center", alignItems: "center", marginTop: 5}} onPress={() => right.onPress()}>
+                        <FontAwesome6 name={right.name} size={16} color={right.color} iconStyle='solid'/>
                     </TouchableOpacity>
                 }
             </View>

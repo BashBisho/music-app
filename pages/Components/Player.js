@@ -8,13 +8,13 @@ import getImage from '../../assets/defaultImage';
 
 export default function Player({navigation}) {
 
-    const { player, songs, playSong, currentSong, togglePlay} = useAudio();
+    const { player, songs, playSong, currentSong, togglePlay, currentArtwork} = useAudio();
     const status = useAudioPlayerStatus(player);
 
-    const play = (currentSong?.artwork ?? getImage());
+    const play = (currentArtwork ?? getImage());
     
     return (
-        <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate("MusicPlayer")} style={{position: "absolute", height: 100, width: "100%", backgroundColor: "#222", bottom: 0, display: "flex", flexDirection: "row", gap: 10, padding: 10}}> 
+        <TouchableOpacity activeOpacity={0.9} onPress={() => { navigation.navigate("MusicPlayer")}} style={{position: "absolute", height: 100, opacity: 1, width: "100%", backgroundColor: "#333", bottom: 0, display: "flex", flexDirection: "row", gap: 10, padding: 10}}> 
             <Image source={play} style={{width: 60, height: 60, borderRadius: 10}}/>
             <View  style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexDirection: "column", paddingBottom: 30}}>
                 <View style={{display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row", width: "90%"}}>

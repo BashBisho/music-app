@@ -19,7 +19,7 @@ export default function App({navigation}) {
 
     const [pic, setPic] = useState("");
     
-    const { player, songs, playSong, currentSong, togglePlay} = useAudio();
+    const { player, songs, playSong, currentSong, togglePlay, currentArtwork} = useAudio();
 
     const blurTargetRef = useRef(null);
 
@@ -41,8 +41,8 @@ export default function App({navigation}) {
         return file.uri;
     }
     
-    const play = (currentSong?.artwork ?? getImage());
-
+    const play = (currentArtwork ?? getImage());
+   // console.log("Play ", currentArtwork , "bruh " )
     return (
         <View style={styles.container} >
             <BlurTargetView
@@ -77,7 +77,7 @@ export default function App({navigation}) {
                 }}
             />
 
-            <Header name={"Home"} right={{name: "settings", backgroundColor: "#DDD", color: "#222", onPress: () => navigation.navigate("Settings")}} />
+            <Header name={"Home"} right={{name: "gear", backgroundColor: "#DDD", color: "#222", onPress: () => navigation.navigate("Settings")}} />
             <StatusBar style="light"/>
             <FlatList
                 data={songs}

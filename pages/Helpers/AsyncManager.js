@@ -54,4 +54,13 @@ export async function getCurrentSong() {
     return (curr ? curr : 0);
 }
 
+export async function getType() {
+    const curr = await AsyncStorage.getItem("@type");
+    
+    return (curr ? JSON.parse(curr) : 0);
+}
+
+export async function setType(t) {
+    await AsyncStorage.setItem("@type", JSON.stringify(t));
+}
 
