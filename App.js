@@ -22,6 +22,8 @@ import {
   createStackScreen,
 } from '@react-navigation/stack';
 
+import AlbumShowcase from './pages/AlbumShowcase';
+
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -52,6 +54,7 @@ export default function App() {
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Settings" component={Settings} />
         <Stack.Screen name="MusicPlayer" component={MusicPlayer} options={{animation: "slide_from_bottom"}} />
+        <Stack.Screen name="AlbumShowcase" component={AlbumShowcase} options={{animation: "slide_from_bottom"}} />
 
       </Stack.Navigator>
     </NavigationContainer>

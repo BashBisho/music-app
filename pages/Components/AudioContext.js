@@ -162,7 +162,7 @@ export function AudioProvider({ children }) {
           }
         });
       } else {
-        connectToPhone("192.168.137.251", (state) => {
+        connectToPhone("192.168.1.239", (state) => {
           console.log("State: ", state);
 
           if (state.type === "artwork") {

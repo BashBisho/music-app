@@ -62,10 +62,11 @@ export default function App({navigation}) {
             albums[song.album].songs.push(song);
 
         }
-    })
-    console.log("FILTER ", filter);
-    console.log(albums.HALO)
-   // console.log("Play ", currentArtwork , "bruh " )
+    });
+
+    console.log("FILTER ", filter); 
+    
+    // console.log("Play ", currentArtwork , "bruh " )
     return (
         <View style={styles.container} >
             <BlurTargetView
@@ -100,13 +101,13 @@ export default function App({navigation}) {
                 }}
             />
 
-            <Header name={"Home"} right={{name: "gear", backgroundColor: "#DDD", color: "#222", onPress: () => navigation.navigate("Settings")}} />
+            <Header name={"Home"} right={{name: "gear", iconSize: 20, backgroundColor: "#22222200", color: "#FFF", onPress: () => navigation.navigate("Settings")}} />
             <StatusBar style="light"/>
             <View style={{height: 60, width: '90%', display: "flex", justifyContent: "flex-start", alignItems: "center", flexDirection: "row", gap: 15}}>
                 {config.map((curr, index) => {
                     return (
-                    <TouchableOpacity key={index} onPress={() => setFilter(index)} style={{display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: (index == filter ? "#222" : "#777" ), paddingVertical: 6, paddingHorizontal: 17, borderRadius: 5}}>
-                        <Text style={{fontSize: 18, fontFamily: "SF-Medium", color: "#FFF"}}>{curr}</Text>
+                    <TouchableOpacity key={index} onPress={() => setFilter(index)} style={{display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: (index == filter ? "#FFFFFF22" : "#FFFFFF66" ), paddingVertical: 6, paddingHorizontal: 17, borderRadius: 5}}>
+                        <Text style={{fontSize: 18, fontFamily: "SF-Bold", color: "#FFF"}}>{curr}</Text>
                     </TouchableOpacity>
                     )
                 })
@@ -116,7 +117,7 @@ export default function App({navigation}) {
              { filter == 0 &&
                 <FlatList
                     data={songs}
-                    style={{width: "92%"}}
+                    style={{width: "90%"}}
                     ItemSeparatorComponent={() => <View style={{height: 14}} />}
                     renderItem={({item, index}) => {
                         return (
@@ -135,7 +136,7 @@ export default function App({navigation}) {
                     renderItem={({item, index}) => {
                         console.log(item);
                         return (
-                            <Album album={item} />
+                            <Album onPress={() => navigation.navigate("AlbumShowcase", {album: item})} album={item} num={2}/>
                         )
                     }}
                     numColumns={2}
@@ -155,6 +156,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
 });

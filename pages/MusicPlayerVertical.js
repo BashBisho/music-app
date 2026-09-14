@@ -119,7 +119,7 @@ export default function App({navigation}) {
 
 
             <View style={{display: "flex", flex: 1, justifyContent: "flex-start", alignItems: "center", flexDirection: "column", width: "100%", paddingTop: 40}}>
-                <Image style={{width: width*0.7, height: width*0.7, borderRadius: 10, marginBottom: 10}}source={play} /> 
+                <Image style={{width: width*0.7, height: width*0.7, borderRadius: 10, marginBottom: 10}} source={play} /> 
                 <Text style={{color: "#FFF", fontSize: 32, fontFamily: "SF-Bold", lineHeight: 36, textAlign: "center", width: "80%"}}>{currentSong?.name}</Text>
                 <Text style={{color: "#888", fontSize: 24, fontFamily: "SF-Reg", lineHeight: 28, marginBottom: 30, textAlign: "center", width: "80%"}} >{currentSong?.artist}</Text>
 

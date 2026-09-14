@@ -213,13 +213,13 @@ export async function getAllSongs() {
         );
 
         const dir = new Directory(path);
-        const files = dir.list();
+        const files = dir.list()[0];
 
 
         for (let i = 0; i < files.length; i++) {
 
             const file = files[i];
-
+            
             const extension = file.extension.toLowerCase();
 
             if (!musicExtensions.includes(extension)) continue;

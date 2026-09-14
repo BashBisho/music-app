@@ -95,7 +95,7 @@ export default function Settings({navigation}) {
             />
             <StatusBar style="light"/>
 
-            <Header name={"Settings"}  left={{name: "caret-left", backgroundColor: "#DDD", color: "#222", onPress: () => { if(navigation.canGoBack()) navigation.goBack()} }}/>
+            <Header name={"Settings"}  left={{name: "chevron-left", backgroundColor: "#00000000", color: "#FFF", iconSize: 20, onPress: () => { if(navigation.canGoBack()) navigation.goBack()} }}/>
             
             <View style={{width: "90%", display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginBottom :20  }}>
                 <View style={{display: "flex", justifyContent: "center", alignItems: "flex-start", flexDirection: "column"}}>

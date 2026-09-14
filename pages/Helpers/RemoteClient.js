@@ -3,7 +3,7 @@ import TcpSocket from "react-native-tcp-socket";
 let socket;
 let artworkBuffer = "";
 export function getPort() {
-    return 5055;
+    return 8080;
 }
 
 let callback = null;
@@ -11,6 +11,7 @@ let currIp = null;
 export function connectToPhone(ip, onState) {
     currIp = ip;
     callback = onState;
+    console.log(currIp, callback);
 
     socket = TcpSocket.createConnection({
         host: ip,
