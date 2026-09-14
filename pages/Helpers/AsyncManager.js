@@ -28,21 +28,6 @@ export async function removePath(index) {
     await AsyncStorage.setItem("@paths", JSON.stringify(newPaths));
 }
 
-export async function cacheSongs() {
-
-    const songs = await getAllSongs();
-
-    await AsyncStorage.setItem("@songs", JSON.stringify(songs));
-
-    return songs;
-}
-
-export async function getCachedSongs() {
-    const songs = await AsyncStorage.getItem("@songs");
-    
-    return (JSON.parse(songs) ? JSON.parse(songs) : []);
-}
-
 export async function setCurrentSong(index) {
     await AsyncStorage.setItem("@currentSong", index);
 }

@@ -11,7 +11,7 @@ export default function HeaderModern({name, right, left, onSettingsPress, fontSi
             <View style={{height: 100, width: "100%", background: "none", flexDirection: "row", display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: constants.statusBarHeight, paddingHorizontal: 17, position: "absolute", top: 0}}> 
                 <View style={{flexDirection: "row", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, width:"100%"}}>
                     <TouchableOpacity activeOpacity={.8} style={{ width: 30, height: 30, opacity: left?.active, borderRadius: 10, backgroundColor: left.backgroundColor, display: "flex", justifyContent: "center", alignItems: "center"}} onPress={() => left.onPress()}>
-                        <FontAwesome6 name={left.name} size={18} color={left.color} iconStyle='solid'/>
+                        <FontAwesome6 name={left.name} size={left.iconSize ?? 18} color={left.color} iconStyle='solid'/>
                     </TouchableOpacity>
                     <Text style={{fontSize, color: "#DDD", fontFamily: "SF-Bold"}}>{name}</Text>
                     {right &&

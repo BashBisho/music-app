@@ -202,6 +202,7 @@ export async function getAllSongs() {
     const musicFiles = [];
     const paths = await getPaths();
 
+    console.log("OK: ", paths);
 
     for (let j = 0; j < paths.length; j++) {
 
@@ -213,8 +214,7 @@ export async function getAllSongs() {
         );
 
         const dir = new Directory(path);
-        const files = dir.list()[0];
-
+        const files = dir.list();
 
         for (let i = 0; i < files.length; i++) {
 

@@ -21,7 +21,9 @@ export default function App({navigation}) {
 
     const [pic, setPic] = useState("");
     
-    const { player, songs, playSong, currentSong, togglePlay, currentArtwork} = useAudio();
+    const { player, allSongs, playSong, currentSong, togglePlay, currentArtwork, setAndPlay} = useAudio();
+    const songs = allSongs;
+
     const [filter, setFilter] = useState(0);
 
     const blurTargetRef = useRef(null);
@@ -46,7 +48,7 @@ export default function App({navigation}) {
     
     const play = (currentArtwork ?? getImage());
     const config = ["All", "Albums", "Artists"];
-
+    console.log("AAAA ", allSongs.length)
     const albums = {}
     songs.forEach(song => {
         //console.log(albums)
@@ -65,7 +67,14 @@ export default function App({navigation}) {
     });
 
     console.log("FILTER ", filter); 
-    
+    songs.sort((a, b) => {
+        if (a.name.toLowerCase() < b.name.toLowerCase())
+            return -1;
+        if (a.name.toLowerCase() > b.name.toLowerCase())
+            return 1;
+        return 0;
+    });
+
     // console.log("Play ", currentArtwork , "bruh " )
     return (
         <View style={styles.container} >
@@ -121,7 +130,7 @@ export default function App({navigation}) {
                     ItemSeparatorComponent={() => <View style={{height: 14}} />}
                     renderItem={({item, index}) => {
                         return (
-                            <Track song={item} index={index} onPress={() => playSong(index)}/>
+                            <Track song={item} index={index} onPress={() => setAndPlay(songs, index)}/>
                         )
                     }}
                     ListFooterComponent={() => <View style={{height:120}}/>}

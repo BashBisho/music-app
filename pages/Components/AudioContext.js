@@ -14,17 +14,16 @@ import {
   useAudioPlayerStatus,
   requestNotificationPermissionsAsync,
   setAudioModeAsync,
+  preload
 } from 'expo-audio';
 
 import { File } from 'expo-file-system';
 
 import {
-  getCachedSongs,
-  cacheSongs,
-  getCurrentSong,
   getType
 } from '../Helpers/AsyncManager';
 
+import { getAllSongs } from '../Helpers/SongManager';
 import {
   startServer,
   sendState,
@@ -50,6 +49,7 @@ export function AudioProvider({ children }) {
   const [currentArtwork, setCurrentArtwork] = useState(null);
   const [lockScreenActive, setLockScreenActive] = useState(false);
   const [isSource, setIsSource] = useState(true);
+  const [allSongs, setAllSongs] = useState([]);
 
   const [remoteStatus, setRemoteStatus] = useState({
     playing: false,
@@ -58,6 +58,7 @@ export function AudioProvider({ children }) {
   });
 
   const songsRef = useRef([]);
+
   const currentIndexRef = useRef(-1);
   const playingRef = useRef(false);
   const statusRef = useRef(realStatus);
@@ -97,7 +98,7 @@ export function AudioProvider({ children }) {
 
   useEffect(() => {
     if (!isSource) return;
-
+    console.log("INNNNNNNNNNNNNNNNNNNN: ", songs.length, songsRef.length)
     const interval = BackgroundTask.setInterval(() => {
       console.log("STILL");
 
@@ -118,6 +119,15 @@ export function AudioProvider({ children }) {
 
     return () => BackgroundTask.clearInterval(interval);
   }, [isSource, currentSong]);
+
+  useEffect(() => {
+  
+    if(realStatus.duration - realStatus.currentTime < 10) {
+      console.log("ENDINIGNIGNIGNG");
+      const nxt = (currentIndexRef.current + 1)%songsRef.current.length;
+      songs[nxt] && preload(songs[nxt].uri, {preferredForwardBuffrDuration: 10});
+    }
+  }, [realStatus.currentTime])
 
   useEffect(() => {
     async function gt() {
@@ -283,16 +293,11 @@ export function AudioProvider({ children }) {
     realStatus.playing
   ]);
 
+
   async function getSongs() {
-    const items = await getCachedSongs();
-
-    setSongs(items);
-    songsRef.current = items;
-
-    const nw = await cacheSongs();
-
-    setSongs(nw);
-    songsRef.current = nw;
+    const items = await getAllSongs();
+    console.log("ONonodasdsoajd ");
+    setAllSongs(items);
   }
 
   useEffect(() => {
@@ -308,12 +313,7 @@ export function AudioProvider({ children }) {
       });
     }
 
-    async function getSong() {
-      const curr = await getCurrentSong();
-      playSong(curr);
-    }
-
-    getSong();
+  
     setupAudio();
     getSongs();
   }, []);
@@ -343,6 +343,8 @@ export function AudioProvider({ children }) {
     if (!songsRef.current[index]) return;
 
     const song = songsRef.current[index];
+    console.log("PLAYING: ", song);
+
     playerRef.current.replace(song.uri);
 
     currentIndexRef.current = index;
@@ -359,6 +361,12 @@ export function AudioProvider({ children }) {
     });
 
     playerRef.current.play();
+  }
+
+  function setAndPlay(newPlaylist, index) {
+    setSongs(newPlaylist);
+    songsRef.current = newPlaylist;
+    playSong(index);
   }
 
   function seekTo(time) {
@@ -453,6 +461,7 @@ export function AudioProvider({ children }) {
         player,
         status,
         songs,
+        allSongs,
         setSongs,
         currentSong,
         currentIndex,
@@ -465,6 +474,7 @@ export function AudioProvider({ children }) {
         pause,
         seekTo,
         togglePlay,
+        setAndPlay,
         nextSong,
         prevSong,
         getSongs

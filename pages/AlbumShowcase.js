@@ -14,13 +14,10 @@ import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 
 export default function AlbumShowcase({navigation, route}) {
 
-    console.log("ROUTE: ", route)
     const { album } = route.params;
     album.songs.sort((a, b) => a.track - b.track);
 
-    const { player, songs, playSong, currentSong, togglePlay, currentArtwork} = useAudio();
-
-    console.log(album);
+    const { player, songs, playSong, currentSong, togglePlay, currentArtwork, setAndPlay} = useAudio();
 
     const blurTargetRef = useRef(null);
     const blurButtonRef = useRef(null);
@@ -107,7 +104,7 @@ export default function AlbumShowcase({navigation, route}) {
                 renderItem={({item, index}) => {
                     return (
                         <View style={{display: "flex" ,justifyContent: "flex-start", alignItems: "center", flexDirection: "row"}}>
-                            <Track song={item} showImage={false} index={index} onPress={() => playSong(index)}/>
+                            <Track song={item} showImage={false} index={index} onPress={() => setAndPlay(album.songs, index)}/>
                         </View>
                     )
                 }}

@@ -115,7 +115,7 @@ export default function App({navigation}) {
                 }}
             />
             <StatusBar style='light'/>
-            <Header name={"Now Playing"} right={{name: "slash", backgroundColor: "#CC2936", color: "#FFF", onPress: () => clearMusicCache()}}  left={{name: "caret-left", backgroundColor: "#DDD", color: "#222", onPress: () => { if(navigation.canGoBack() ) navigation.goBack()} }}/>
+            <Header name={"Now Playing"} right={{name: "slash", backgroundColor: "#CC2936", color: "#FFF", onPress: () => clearMusicCache()}}  left={{name: "chevron-left", backgroundColor: "#FFFFFF00", color: "#FFF", iconSize: 24, onPress: () => { if(navigation.canGoBack() ) navigation.goBack()} }}/>
 
 
             <View style={{display: "flex", flex: 1, justifyContent: "flex-start", alignItems: "center", flexDirection: "column", width: "100%", paddingTop: 40}}>

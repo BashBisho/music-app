@@ -4,17 +4,25 @@ import { useAudioPlayerStatus } from 'expo-audio';
 import { StyleSheet, Text, View, Button, TouchableOpacity} from 'react-native';
 import { ImageBackground, Image } from 'expo-image';
 import getImage from '../../assets/defaultImage';
-
+import {useEffect, useState} from 'react';
+import { getType } from '../Helpers/AsyncManager';
 
 export default function Player({navigation}) {
 
-    const { player, songs, playSong, currentSong, togglePlay, currentArtwork} = useAudio();
-    const status = useAudioPlayerStatus(player);
+    const { player, songs, playSong, currentSong, togglePlay, currentArtwork, remoteStatus} = useAudio();
+    const [status, setStatus] = useState(useAudioPlayerStatus(player));
 
     const play = (currentArtwork ?? getImage());
-    
+    useEffect(() => {
+        async function gt() {
+            const type = getType();
+            if(type) setStatus(remoteStatus);
+        }
+
+        gt();
+    })
     return (
-        <TouchableOpacity activeOpacity={0.9} onPress={() => { navigation.navigate("MusicPlayer")}} style={{position: "absolute", height: 100, opacity: 1, width: "100%", backgroundColor: "#333", bottom: 0, display: "flex", flexDirection: "row", gap: 10, padding: 10}}> 
+        <TouchableOpacity activeOpacity={0.9} onPress={() => { navigation.navigate("MusicPlayer")}} style={{position: "absolute", height: 100, opacity: 1, width: "100%", backgroundColor: "#444", bottom: 0, display: "flex", flexDirection: "row", gap: 10, padding: 10}}> 
             <Image source={play} style={{width: 60, height: 60, borderRadius: 10}}/>
             <View  style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexDirection: "column", paddingBottom: 30}}>
                 <View style={{display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row", width: "90%"}}>
