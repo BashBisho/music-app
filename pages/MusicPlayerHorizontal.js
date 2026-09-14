@@ -40,7 +40,7 @@ export default function App({navigation}) {
     const {width, height} = Dimensions.get("screen");
     const play = (currentArtwork ?? getImage());
 
-    const barWidth = width * 0.8;
+    const barWidth = width/1.5 * 0.8;
     const progress = useSharedValue(0);
 
     useEffect(() => {
@@ -109,11 +109,12 @@ export default function App({navigation}) {
                 }}
             />
             <StatusBar style='light'/>
-            <Header name={"Now Playing Horizontal"} right={{name: "slash", backgroundColor: "#CC2936", color: "#FFF", onPress: () => clearMusicCache()}}  left={{name: "caret-left", backgroundColor: "#DDD", active: 0, color: "#222", onPress: () => { if(navigation.canGoBack() ) navigation.goBack()} }}/>
+            { // <Header name={"Now Playing Horizontal"} right={{name: "slash", backgroundColor: "#CC2936", color: "#FFF", onPress: () => clearMusicCache()}}  left={{name: "caret-left", backgroundColor: "#DDD", active: 0, color: "#222", onPress: () => { if(navigation.canGoBack() ) navigation.goBack()} }}/> 
+            }
 
 
-            <View style={{display: "flex", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "row", width: "100%", paddingTop: 40}}>
-                <Image style={{width: h, height: h, borderRadius: 10, marginBottom: 10}}source={play} /> 
+            <View style={{display: "flex", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "row", width: width/1.5, paddingTop: 40}}>
+                <Image style={{width: h/1.2, height: h/1.2, borderRadius: 10, marginBottom: 10}}source={play} /> 
                 <View style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                     <Text style={{color: "#FFF", fontSize: 32, fontFamily: "SF-Bold", lineHeight: 36, textAlign: "center", width: "80%"}}>{currentSong?.name}</Text>
                     <Text style={{color: "#888", fontSize: 24, fontFamily: "SF-Reg", lineHeight: 28, marginBottom: 30, textAlign: "center", width: "80%"}} >{currentSong?.artist}</Text>

@@ -37,7 +37,7 @@ export function startServer(onCommand) {
 
         socket.on("error", error => {
             console.log("Socket error:", error);
-
+            isSendingArtwork = false;
             if (client === socket) {
                 client = null;
             }
@@ -45,7 +45,7 @@ export function startServer(onCommand) {
 
         socket.on("close", () => {
             console.log("Tablet disconnected");
-
+            isSendingArtwork = false;
             if (client === socket) {
                 client = null;
             }
@@ -59,6 +59,7 @@ export function startServer(onCommand) {
 }
 
 export function sendState(state) {
+    console.log("sending: ", client, " AND ", isSendingArtwork)
     if (!client || isSendingArtwork) return;
 
     try {

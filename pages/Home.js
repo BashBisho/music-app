@@ -14,12 +14,15 @@ import getImage from '../assets/defaultImage';
 import { FlatList } from 'react-native-gesture-handler';
 import Track from './Components/Track';
 import Player from './Components/Player';
+import { setType } from './Helpers/AsyncManager';
+import Album from './Components/Album'
 
 export default function App({navigation}) {
 
     const [pic, setPic] = useState("");
     
     const { player, songs, playSong, currentSong, togglePlay, currentArtwork} = useAudio();
+    const [filter, setFilter] = useState(0);
 
     const blurTargetRef = useRef(null);
 
@@ -42,6 +45,26 @@ export default function App({navigation}) {
     }
     
     const play = (currentArtwork ?? getImage());
+    const config = ["All", "Albums", "Artists"];
+
+    const albums = {}
+    songs.forEach(song => {
+        //console.log(albums)
+        if(song.album && albums[song.album]) albums[song.album].songs.push(song);
+        else {
+            albums[song.album] = {
+                songs: new Array(),
+                cover: song.artwork,
+                name: song.album,
+                artist: song.artist
+            }
+            
+            albums[song.album].songs.push(song);
+
+        }
+    })
+    console.log("FILTER ", filter);
+    console.log(albums.HALO)
    // console.log("Play ", currentArtwork , "bruh " )
     return (
         <View style={styles.container} >
@@ -79,17 +102,49 @@ export default function App({navigation}) {
 
             <Header name={"Home"} right={{name: "gear", backgroundColor: "#DDD", color: "#222", onPress: () => navigation.navigate("Settings")}} />
             <StatusBar style="light"/>
-            <FlatList
-                data={songs}
-                style={{width: "92%"}}
-                ItemSeparatorComponent={() => <View style={{height: 14}} />}
-                renderItem={({item, index}) => {
+            <View style={{height: 60, width: '90%', display: "flex", justifyContent: "flex-start", alignItems: "center", flexDirection: "row", gap: 15}}>
+                {config.map((curr, index) => {
                     return (
-                        <Track song={item} index={index} onPress={() => playSong(index)}/>
+                    <TouchableOpacity key={index} onPress={() => setFilter(index)} style={{display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: (index == filter ? "#222" : "#777" ), paddingVertical: 6, paddingHorizontal: 17, borderRadius: 5}}>
+                        <Text style={{fontSize: 18, fontFamily: "SF-Medium", color: "#FFF"}}>{curr}</Text>
+                    </TouchableOpacity>
                     )
-                }}
-                ListFooterComponent={() => <View style={{height:120}}/>}
-            />
+                })
+              
+                }   
+            </View>
+             { filter == 0 &&
+                <FlatList
+                    data={songs}
+                    style={{width: "92%"}}
+                    ItemSeparatorComponent={() => <View style={{height: 14}} />}
+                    renderItem={({item, index}) => {
+                        return (
+                            <Track song={item} index={index} onPress={() => playSong(index)}/>
+                        )
+                    }}
+                    ListFooterComponent={() => <View style={{height:120}}/>}
+                /> 
+            }
+            { filter == 1 && 
+                <FlatList
+                    data={Object.values(albums).filter((album) => album.songs.length > 1)}
+                    style={{width: "92%"}}
+                    ItemSeparatorComponent={() => <View style={{height: 14}} />}
+                    ListFooterComponent={() => <View style={{height:120}}/>}
+                    renderItem={({item, index}) => {
+                        console.log(item);
+                        return (
+                            <Album album={item} />
+                        )
+                    }}
+                    numColumns={2}
+                    columnWrapperStyle={{
+                        justifyContent: 'space-between',
+                    }}
+                />            
+            }
+
 
             <Player navigation={navigation} />
 

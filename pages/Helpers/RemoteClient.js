@@ -3,10 +3,15 @@ import TcpSocket from "react-native-tcp-socket";
 let socket;
 let artworkBuffer = "";
 export function getPort() {
-    return 8080;
+    return 5055;
 }
 
+let callback = null;
+let currIp = null;
 export function connectToPhone(ip, onState) {
+    currIp = ip;
+    callback = onState;
+
     socket = TcpSocket.createConnection({
         host: ip,
         port: getPort()
@@ -58,14 +63,25 @@ export function connectToPhone(ip, onState) {
     });
 
     socket.on("error", error => {
+        scheduleReconnect();
         console.log("Connection error:", error);
     });
 
     socket.on("close", () => {
+        scheduleReconnect();
         console.log("Disconnected");
         socket = null;
     });
 }
+
+function scheduleReconnect() {
+    console.log("Scheduling ");
+    setTimeout(() => {
+        connectToPhone(currIp, callback);
+    }, 2000)
+
+}
+
 
 export function sendCommand(command) {
     if (!socket) return;

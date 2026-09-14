@@ -7,6 +7,7 @@ import {
 } from 'react';
 
 import { registerForPushNotificationsAsync } from '../Helpers/Notifications'
+import BackgroundTask from 'react-native-background-timer'
 
 import {
   useAudioPlayer,
@@ -97,7 +98,9 @@ export function AudioProvider({ children }) {
   useEffect(() => {
     if (!isSource) return;
 
-    const interval = setInterval(() => {
+    const interval = BackgroundTask.setInterval(() => {
+      console.log("STILL");
+
       const status = statusRef.current;
 
       sendState({
@@ -113,7 +116,7 @@ export function AudioProvider({ children }) {
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => BackgroundTask.clearInterval(interval);
   }, [isSource, currentSong]);
 
   useEffect(() => {
@@ -159,7 +162,7 @@ export function AudioProvider({ children }) {
           }
         });
       } else {
-        connectToPhone("192.168.1.239", (state) => {
+        connectToPhone("192.168.137.251", (state) => {
           console.log("State: ", state);
 
           if (state.type === "artwork") {
@@ -240,9 +243,11 @@ export function AudioProvider({ children }) {
   }, [currentSong, isSource]);
 
   useEffect(() => {
+    console.log("song changed, ", isSource, " and ", currentSong)
     if (!isSource) return;
     if (!currentSong) return;
 
+  
     sendState({
       type: "state",
       index: currentIndex,
