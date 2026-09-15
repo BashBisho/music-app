@@ -70,12 +70,12 @@ export default function AlbumShowcase({navigation, route}) {
                 }}
             />
 
-            <HeaderModern name={album.name} fontSize={18} left={{name: "chevron-left", backgroundColor: "#DDDDDD00", active: 1, color: "#FFF", onPress: () => navigation.goBack()}} right={{name: "gear", backgroundColor: "#DDD", active: 0, color: "#222", onPress: () => navigation.navigate("Settings")}} />
+            <HeaderModern name={album.name} left={{name: "chevron-left", backgroundColor: "#DDDDDD00", active: 1, color: "#FFF", onPress: () => navigation.goBack()}} right={{name: "gear", backgroundColor: "#DDD", active: 0, color: "#222", onPress: () => navigation.navigate("Settings")}} />
             <StatusBar style="light"/>
 
-            <View style={{display: "flex", flexDirection: "row", justifyContent: "flex-start", alignItems: "flex-start", width: "90%", gap: 20, marginBottom: 20}} >
+            <View style={{display: "flex", flexDirection: "row", justifyContent: "flex-start", alignItems: "flex-start", width: "90%", gap: 15, marginBottom: 20}} >
                 <Image style={{width: imgW, height: imgW, borderRadius: 10}} source={{uri: play}} />
-                <View style={{display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-start", width: imgW }}>
+                <View style={{display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-start", width: imgW - 15}}>
                     <Text style={{fontFamily: "SF-Bold", fontSize: 12, color: "#AAA", textAlign: "left", marginBottom: 10}}>{`Album | ${album.songs.length} songs | ${album.songs[0].year}`}</Text>
                     <Text style={{fontFamily: "SF-Bold", fontSize: 24, color: "#FFF", textAlign: "left"}}>{album.name}</Text>
                     <Text style={{fontFamily: "SF-Medium", fontSize: 18, color: "#ddd", textAlign: "left"}}>{album.artist}</Text>
@@ -89,7 +89,7 @@ export default function AlbumShowcase({navigation, route}) {
                     <Text style={{fontSize: 20, color: "#FFF", fontFamily: "SF-Bold"}}>SHUFFLE</Text>
                     <FontAwesome6 name={"shuffle"} size={16} color={"#fff"} style={{marginTop: 2}} iconStyle='solid' />
                 </TouchableOpacity>
-                <TouchableOpacity style={{backgroundColor: '#FFFFFF43', height: 50, flex: 1, borderRadius: 5, overflow: 'hidden', justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 15}}>
+                <TouchableOpacity onPress={() => setAndPlay(album.songs, 0)} style={{backgroundColor: '#FFFFFF43', height: 50, flex: 1, borderRadius: 5, overflow: 'hidden', justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 15}}>
                     <Text style={{fontSize: 20, color: "#FFF", fontFamily: "SF-Bold"}}>PLAY</Text>
                     <FontAwesome6 name={"play"} size={16} color={"#fff"}  iconStyle='solid' />
                 </TouchableOpacity>
@@ -108,8 +108,8 @@ export default function AlbumShowcase({navigation, route}) {
                         </View>
                     )
                 }}
-                ListFooterComponent={() => <View style={{height:120}}/>}
             /> 
+             <View style={{height: 100}}></View>
             <Player navigation={navigation} />
 
         </View>

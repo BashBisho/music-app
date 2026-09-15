@@ -18,10 +18,5 @@ export default function ({navigation}) {
         gt();
     }, [])
 
-    return (
-        <>
-            {sender && <MusicPlayerHorizontal navigation={navigation}/>}
-            {!sender && <MusicPlayerVertical navigation={navigation}/>}
-        </>
-    )
+    return sender ? <MusicPlayerHorizontal navigation={navigation}/> : <MusicPlayerVertical navigation={navigation}/>
 }

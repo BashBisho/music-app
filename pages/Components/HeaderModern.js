@@ -13,7 +13,7 @@ export default function HeaderModern({name, right, left, onSettingsPress, fontSi
                     <TouchableOpacity activeOpacity={.8} style={{ width: 30, height: 30, opacity: left?.active, borderRadius: 10, backgroundColor: left.backgroundColor, display: "flex", justifyContent: "center", alignItems: "center"}} onPress={() => left.onPress()}>
                         <FontAwesome6 name={left.name} size={left.iconSize ?? 18} color={left.color} iconStyle='solid'/>
                     </TouchableOpacity>
-                    <Text style={{fontSize, color: "#DDD", fontFamily: "SF-Bold"}}>{name}</Text>
+                    <Text style={{fontSize: name.length > 10 ? fontSize - name.length/3.8 : fontSize, color: "#DDD", fontFamily: "SF-Bold"}}>{name}</Text>
                     {right &&
                         <TouchableOpacity activeOpacity={.8} style={{width: 30, opacity: 0, height: 30, borderRadius: 10, backgroundColor: right.backgroundColor, display: "flex", justifyContent: "center", alignItems: "center"}} onPress={() => right.onPress()}>
                             <Feather name={right.name} size={16} color={right.color}/>

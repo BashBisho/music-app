@@ -50,6 +50,7 @@ export function AudioProvider({ children }) {
   const [lockScreenActive, setLockScreenActive] = useState(false);
   const [isSource, setIsSource] = useState(true);
   const [allSongs, setAllSongs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [remoteStatus, setRemoteStatus] = useState({
     playing: false,
@@ -296,6 +297,7 @@ export function AudioProvider({ children }) {
 
   async function getSongs() {
     const items = await getAllSongs();
+    setLoading(false);
     console.log("ONonodasdsoajd ");
     setAllSongs(items);
   }
@@ -468,6 +470,7 @@ export function AudioProvider({ children }) {
         currentArtwork,
         remoteStatus,
 
+        loading,
         isSource,
         playSong,
         play,

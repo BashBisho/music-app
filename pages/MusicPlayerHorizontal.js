@@ -11,7 +11,7 @@ import Header from './Components/HeaderModern';
 import { AudioProvider, useAudio } from './Components/AudioContext';
 import getImage from '../assets/defaultImage';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
-import format from './Helpers/HelperFunctions';
+import { format } from './Helpers/HelperFunctions';
 
 import Animated, {
     useSharedValue,
