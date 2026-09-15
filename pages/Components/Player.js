@@ -45,7 +45,7 @@ export default function Player({navigation}) {
     const len = 60;
     const color = "#FFFFFFaa";
     return (
-        <TouchableOpacity activeOpacity={0.9} onPress={() => { navigation.navigate("MusicPlayer")}} style={{position: "absolute", height: 90, opacity: 1, width: "100%", backgroundColor: "#FFFFFF33", bottom: 0, display: "flex",alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 10, padding: 10}}> 
+        <TouchableOpacity activeOpacity={0.9} onPress={() => { navigation.navigate("MusicPlayer")}} style={{position: "absolute", height: 90, opacity: 1, width: "100%", backgroundColor: "#FFFFFF11", bottom: 0, display: "flex",alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 10, padding: 10}}> 
             <View style={{width: 60, height: 60, marginBottom: 10}}>
                 <Image source={play} style={{width: 60, height: 60, borderRadius: 5}}/>
             </View>
