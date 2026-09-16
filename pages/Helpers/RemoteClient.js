@@ -3,7 +3,7 @@ import TcpSocket from "react-native-tcp-socket";
 let socket;
 let artworkBuffer = "";
 export function getPort() {
-    return 8000;
+    return 5055;
 }
 
 let callback = null;
