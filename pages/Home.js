@@ -50,7 +50,6 @@ export default function App({navigation}) {
     
     const play = (currentArtwork ?? getImage());
     const config = ["All", "Albums", "Artists"];
-    console.log("AAAA ", allSongs.length)
     const albums = {}
     songs.forEach(song => {
         //console.log(albums)
@@ -68,7 +67,6 @@ export default function App({navigation}) {
         }
     });
 
-    console.log("FILTER ", filter); 
     songs.sort((a, b) => {
         if (a.name.toLowerCase() < b.name.toLowerCase())
             return -1;
@@ -136,10 +134,10 @@ export default function App({navigation}) {
                     <FlatList
                         data={shown}
                         style={{width: "90%"}}
-                        ItemSeparatorComponent={() => <View style={{height: 14}} />}
+                        ItemSeparatorComponent={() => <View style={{height: 10}} />}
                         renderItem={({item, index}) => {
                             return (
-                                <Track song={item} index={index} onPress={() => setAndPlay(shown, index)}/>
+                                <Track song={item} index={index} onPress={() => setAndPlay(shown, index, true)}/>
                             )
                         }}
                     /> 
@@ -151,7 +149,6 @@ export default function App({navigation}) {
                     style={{width: "92%"}}
                     ItemSeparatorComponent={() => <View style={{height: 14}} />}
                     renderItem={({item, index}) => {
-                        console.log(item);
                         return (
                             <Album onPress={() => navigation.navigate("AlbumShowcase", {album: item})} album={item} num={2}/>
                         )

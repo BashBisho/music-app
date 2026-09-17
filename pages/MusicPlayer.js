@@ -11,7 +11,6 @@ export default function ({navigation}) {
     useEffect(() => {
         async function gt() {
             const type = await getType();
-            console.log("isss ", type)
             setSender(type);
         }
 

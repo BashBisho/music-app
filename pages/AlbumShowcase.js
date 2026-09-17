@@ -17,7 +17,7 @@ export default function AlbumShowcase({navigation, route}) {
     const { album } = route.params;
     album.songs.sort((a, b) => a.track - b.track);
 
-    const { player, songs, playSong, currentSong, togglePlay, currentArtwork, setAndPlay} = useAudio();
+    const { player, songs, playSong, currentSong, togglePlay, currentArtwork, toggleShuffle, setAndPlay, playShuffle} = useAudio();
 
     const blurTargetRef = useRef(null);
     const blurButtonRef = useRef(null);
@@ -26,14 +26,6 @@ export default function AlbumShowcase({navigation, route}) {
     const {width} = Dimensions.get('screen');
 
     const imgW = width*0.9*0.5;
-
-    console.log({
-        AlbumShowcase,
-        Image,
-        View,
-        Text,
-        TouchableOpacity,
-    });
 
    // console.log("Play ", currentArtwork , "bruh " )
     return (
@@ -85,11 +77,11 @@ export default function AlbumShowcase({navigation, route}) {
 
             <View style={{width: "90%", display: "flex", flexDirection: "row", gap: 10, marginBottom: 20}}>
                 
-                <TouchableOpacity style={{backgroundColor: '#FFFFFF11', height: 50, flex: 1, borderRadius: 5, overflow: 'hidden', justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 15}}>
+                <TouchableOpacity onPress={() => { playShuffle(album.songs) } } style={{backgroundColor: '#FFFFFF11', height: 50, flex: 1, borderRadius: 5, overflow: 'hidden', justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 15}}>
                     <Text style={{fontSize: 20, color: "#FFF", fontFamily: "SF-Bold"}}>SHUFFLE</Text>
                     <FontAwesome6 name={"shuffle"} size={16} color={"#fff"} style={{marginTop: 2}} iconStyle='solid' />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => setAndPlay(album.songs, 0)} style={{backgroundColor: '#FFFFFF43', height: 50, flex: 1, borderRadius: 5, overflow: 'hidden', justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 15}}>
+                <TouchableOpacity onPress={() => setAndPlay(album.songs, 0, true)} style={{backgroundColor: '#FFFFFF43', height: 50, flex: 1, borderRadius: 5, overflow: 'hidden', justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 15}}>
                     <Text style={{fontSize: 20, color: "#FFF", fontFamily: "SF-Bold"}}>PLAY</Text>
                     <FontAwesome6 name={"play"} size={16} color={"#fff"}  iconStyle='solid' />
                 </TouchableOpacity>
@@ -104,7 +96,7 @@ export default function AlbumShowcase({navigation, route}) {
                 renderItem={({item, index}) => {
                     return (
                         <View style={{display: "flex" ,justifyContent: "flex-start", alignItems: "center", flexDirection: "row"}}>
-                            <Track song={item} showImage={false} index={index} onPress={() => setAndPlay(album.songs, index)}/>
+                            <Track song={item} showImage={false} index={index} onPress={() => setAndPlay(album.songs, index, true)}/>
                         </View>
                     )
                 }}

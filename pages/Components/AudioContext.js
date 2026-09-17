@@ -11,6 +11,8 @@ import { registerForPushNotificationsAsync } from '../Helpers/Notifications'
 import {
   useAudioPlayer,
   useAudioPlayerStatus,
+  useAudioPlaylist,
+  useAudioPlaylistStatus,
   requestNotificationPermissionsAsync,
   setAudioModeAsync,
   preload
@@ -39,10 +41,11 @@ import getImage from '../../assets/defaultImage';
 const AudioContext = createContext(null);
 
 export function AudioProvider({ children }) {
-  const player = useAudioPlayer(null);
-  const realStatus = useAudioPlayerStatus(player);
+  const player = useAudioPlaylist();
+  const realStatus = useAudioPlaylistStatus(player);
 
   const [songs, setSongs] = useState([]);
+  const [originalSongs, setOriginalSongs] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [currentSong, setCurrentSong] = useState({});
   const [currentArtwork, setCurrentArtwork] = useState(null);
@@ -50,20 +53,27 @@ export function AudioProvider({ children }) {
   const [isSource, setIsSource] = useState(true);
   const [allSongs, setAllSongs] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [isShuffle, setShuffle] = useState(false);
+  const [loop, setLoop] = useState('all');
+  
   const [remoteStatus, setRemoteStatus] = useState({
     playing: false,
     currentTime: 0,
     duration: 0
   });
 
-  const songsRef = useRef([]);
 
+  const songsRef = useRef([]);
   const currentIndexRef = useRef(-1);
   const playingRef = useRef(false);
   const statusRef = useRef(realStatus);
   const playerRef = useRef(null);
+ 
 
+
+  useEffect(() => {
+    player.loop = loop;
+  }, [loop]);
   useEffect(() => {
       playingRef.current = realStatus.playing;
   }, [realStatus.playing]);
@@ -89,19 +99,26 @@ export function AudioProvider({ children }) {
 
   useEffect(() => {
     if (!isSource) return;
-    if (!realStatus.didJustFinish) return;
+    console.log("JUST finished ", realStatus.currentIndex);
 
-    if (currentIndex + 1 < songs.length) {
-      playSong(currentIndex + 1);
-    }
-  }, [realStatus.didJustFinish]);
+    setCurrentSong(songsRef.current[realStatus.currentIndex] ?? {});
+    const song  = songsRef.current[realStatus.currentIndex];
+    updateLockScreen(song ? {
+      title: song.name,
+      artist: song.artist,
+      albumTitle: song.album,
+      artworkUrl: song.artwork,
+    } : undefined);
+
+  }, [realStatus.currentIndex]);
+
+
+
 
   useEffect(() => {
     if (!isSource) return;
-    console.log("INNNNNNNNNNNNNNNNNNNN: ", songs.length, songsRef.length)
-    const interval = setInterval(() => {
-      console.log("STILL");
 
+    const interval = setInterval(() => {
       const status = statusRef.current;
 
       sendState({
@@ -123,7 +140,6 @@ export function AudioProvider({ children }) {
   useEffect(() => {
   
     if(realStatus.duration - realStatus.currentTime < 10) {
-      console.log("ENDINIGNIGNIGNG");
       const nxt = (currentIndexRef.current + 1)%songsRef.current.length;
       songs[nxt] && preload(songs[nxt].uri, {preferredForwardBuffrDuration: 10});
     }
@@ -133,7 +149,6 @@ export function AudioProvider({ children }) {
     async function gt() {
       const type = await getType();
       setIsSource(!type);
-
       if (type == 0) {
         startServer((cmd) => {
           console.log("Command: ", cmd);
@@ -152,6 +167,14 @@ export function AudioProvider({ children }) {
             if(playingRef.current) {
               playerRef.current.pause();
             } else playerRef.current.play();
+          }
+
+          if (cmd.type === "toggleShuffle") {
+            toggleShuffle();
+          }
+
+          if (cmd.type === "toggleLoop") {
+            toggleLoop();
           }
 
           if (cmd.type === "next") {
@@ -251,9 +274,9 @@ export function AudioProvider({ children }) {
 
     loadArtwork();
   }, [currentSong, isSource]);
-
+  
+  
   useEffect(() => {
-    console.log("song changed, ", isSource, " and ", currentSong)
     if (!isSource) return;
     if (!currentSong) return;
 
@@ -297,7 +320,6 @@ export function AudioProvider({ children }) {
   async function getSongs() {
     const items = await getAllSongs();
     setLoading(false);
-    console.log("ONonodasdsoajd ");
     setAllSongs(items);
   }
 
@@ -320,17 +342,20 @@ export function AudioProvider({ children }) {
   }, []);
 
   const updateLockScreen = (metadata) => {
+    if(!metadata) return;
+
     if (lockScreenActive) {
       playerRef.current.updateLockScreenMetadata(metadata);
     } else {
       playerRef.current.setActiveForLockScreen(true, metadata, {
-        showSeekBackward: true,
-        showSeekForward: true,
+        showNextTrack: true,
+        showPreviousTrack: true,
       });
 
       setLockScreenActive(true);
     }
   };
+
 
   function playSong(index) {
     if (!isSource) {
@@ -346,13 +371,11 @@ export function AudioProvider({ children }) {
     const song = songsRef.current[index];
     console.log("PLAYING: ", song);
 
-    playerRef.current.replace(song.uri);
+    playerRef.current.skipTo(index);
 
     currentIndexRef.current = index;
     setCurrentIndex(index);
     setCurrentSong(song);
-    setCurrentArtwork(null);
-
 
     updateLockScreen({
       title: song.name,
@@ -364,10 +387,25 @@ export function AudioProvider({ children }) {
     playerRef.current.play();
   }
 
-  function setAndPlay(newPlaylist, index) {
+  function setAndPlay(newPlaylist, index, original = false) {
     setSongs(newPlaylist);
     songsRef.current = newPlaylist;
+    playerRef.current.clear();
+    if(original) setOriginalSongs(newPlaylist);
+    if(original) setShuffle(false);
+
+    newPlaylist.forEach(song => playerRef.current.add({uri: song.uri, name: `${song.name} - ${song.artist}`}));
+    console.log("SOURCES: ", playerRef.current.sources)
     playSong(index);
+  }
+
+  function playShuffle(songs) {
+    setOriginalSongs(songs);
+    setShuffle(true);
+
+    const newSongs = shuffle(songs);
+    setAndPlay(newSongs, 0);
+
   }
 
   function seekTo(time) {
@@ -418,10 +456,8 @@ export function AudioProvider({ children }) {
       playerRef.current.play();
     }
   }
-
+  
   function nextSong() {
-    console.log("in: ", isSource);
-
     if (!isSource) {
       sendCommand({
         type: "next"
@@ -429,15 +465,11 @@ export function AudioProvider({ children }) {
       return;
     }
 
-    console.log("Ref ", songsRef.current.length);
-    console.log("Current index ref ", currentIndexRef.current);
+    playerRef.current.next();
+    if(!realStatus.playing) playerRef.current.play();
 
-    if (songsRef.current.length === 0) return;
+    setCurrentSong(songsRef.current[playerRef.current.currentIndex]);
 
-    const nextIndex =
-      (currentIndexRef.current + 1) % songsRef.current.length;
-
-    playSong(nextIndex);
   }
 
   function prevSong() {
@@ -448,12 +480,61 @@ export function AudioProvider({ children }) {
       return;
     }
 
-    if (songsRef.current.length === 0) return;
+    playerRef.current.previous();
+    if(!realStatus.playing) playerRef.current.play();
 
-    const previousIndex =
-      (currentIndexRef.current - 1 + songsRef.current.length) % songsRef.current.length;
+    setCurrentSong(songsRef.current[playerRef.current.currentIndex]);
 
-    playSong(previousIndex);
+  }
+
+  function shuffle(array) {
+    const result = [...array];
+
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+
+    return result;
+  }
+
+  function toggleShuffle() {
+    if (!isSource) {
+      sendCommand({
+        type: "toggleShuffle"
+      });
+      return;
+    }
+
+    if(isShuffle) {
+
+      const currT = realStatus.currentTime;
+      setAndPlay(originalSongs, originalSongs.findIndex(song => song.uri == currentSong.uri));
+      seekTo(currT);
+
+    } else {
+      const currT = realStatus.currentTime;
+      const newSongs = shuffle(originalSongs);
+      
+      setAndPlay(newSongs, newSongs.findIndex(song => song.uri == currentSong.uri));
+      seekTo(currT);
+    }
+
+    setShuffle(s => !s);
+  }
+
+  
+
+
+   function toggleLoop() {
+    if (!isSource) {
+      sendCommand({
+        type: "toggleLoop"
+      });
+      return;
+    }
+    
+    setLoop(prev => prev === 'all' ? 'single' : 'all');
   }
 
   return (
@@ -468,6 +549,8 @@ export function AudioProvider({ children }) {
         currentIndex,
         currentArtwork,
         remoteStatus,
+        toggleLoop,
+        toggleShuffle,
 
         loading,
         isSource,
@@ -479,7 +562,9 @@ export function AudioProvider({ children }) {
         setAndPlay,
         nextSong,
         prevSong,
-        getSongs
+        getSongs,
+        isShuffle,
+        playShuffle,
       }}
     >
       {children}

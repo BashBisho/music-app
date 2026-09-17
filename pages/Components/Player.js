@@ -1,6 +1,6 @@
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 import { AudioProvider, useAudio } from '../Components/AudioContext';
-import { useAudioPlayerStatus } from 'expo-audio';
+import { useAudioPlaylistStatus } from 'expo-audio';
 import { StyleSheet, Text, View, Button, TouchableOpacity, Dimensions} from 'react-native';
 import { ImageBackground, Image } from 'expo-image';
 import getImage from '../../assets/defaultImage';
@@ -13,7 +13,7 @@ export default function Player({navigation}) {
     const { player, songs, playSong, currentSong, togglePlay, currentArtwork, remoteStatus} = useAudio();
     const [type, setType] = useState(0);
 
-    const status = useAudioPlayerStatus(player);
+    const status = useAudioPlaylistStatus(player);
     const { width } = Dimensions.get("screen");
 
     const play = (currentArtwork ?? getImage());
@@ -37,7 +37,6 @@ export default function Player({navigation}) {
         artwork: getImage()
     }
 
-    console.log("STATUS: ", getStatus())
     const isFromAlbum = (currentSong?.album && currentSong.album != "Unknown" && currentSong?.album != currentSong?.name);
 
     const pre = getStatus().currentTime/getStatus().duration;

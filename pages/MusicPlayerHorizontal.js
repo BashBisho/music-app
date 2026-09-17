@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, Button, TouchableOpacity, Dimensions} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { AudioPlayer, useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio'
+import { useAudioPlaylistStatus } from 'expo-audio'
 import { Directory,  File, Paths } from 'expo-file-system'; 
 import { useState, useEffect, useRef } from 'react';
 
@@ -30,11 +30,10 @@ export default function App({navigation}) {
     const [sender, setSender] = useState(false);
 
     useEffect(() => {
-        console.log("LOCIGN ");
         lockAsync(OrientationLock.LANDSCAPE)
     }, [])
 
-    const status = useAudioPlayerStatus(player);
+    const status = useAudioPlaylistStatus(player);
 
     const blurTargetRef = useRef(null);
     const {width, height} = Dimensions.get("screen");

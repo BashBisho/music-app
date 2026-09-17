@@ -35,7 +35,6 @@ export default function Settings({navigation}) {
 
     async function getAllPaths() {
         const pths = await getPaths();
-        console.log("GETTING");
         setPths(pths);
         getSongs();
         console.log(pths);
@@ -44,7 +43,6 @@ export default function Settings({navigation}) {
     useEffect(() => {
         async function GT() {
             const type = await getType();
-            console.log("tYPOEEEE ", type)
             setSender(type);
         }
 
@@ -53,7 +51,6 @@ export default function Settings({navigation}) {
     }, [])
 
     async function toggle() {
-        console.log("CURR ", sender)
         await setType((sender ? false : true));
         setSender(t => !t);
     }
