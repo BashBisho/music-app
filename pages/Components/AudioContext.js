@@ -7,7 +7,6 @@ import {
 } from 'react';
 
 import { registerForPushNotificationsAsync } from '../Helpers/Notifications'
-import BackgroundTask from 'react-native-background-timer'
 
 import {
   useAudioPlayer,
@@ -100,7 +99,7 @@ export function AudioProvider({ children }) {
   useEffect(() => {
     if (!isSource) return;
     console.log("INNNNNNNNNNNNNNNNNNNN: ", songs.length, songsRef.length)
-    const interval = BackgroundTask.setInterval(() => {
+    const interval = setInterval(() => {
       console.log("STILL");
 
       const status = statusRef.current;
@@ -118,7 +117,7 @@ export function AudioProvider({ children }) {
       });
     }, 1000);
 
-    return () => BackgroundTask.clearInterval(interval);
+    return () => clearInterval(interval);
   }, [isSource, currentSong]);
 
   useEffect(() => {
