@@ -21,15 +21,21 @@ import {
 import { File } from 'expo-file-system';
 
 import {
+    startBackgroundServer,
+    stopBackgroundServer
+} from '../Helpers/BackgroundService';
+
+import {
   getType
 } from '../Helpers/AsyncManager';
 
+
 import { getAllSongs } from '../Helpers/SongManager';
 import {
-  startServer,
-  sendState,
-  sendArtwork,
-  stopServer
+    setCommandCallback,
+    sendState,
+    sendArtwork,
+    queueArtwork
 } from '../Helpers/RemoteServer';
 
 import {
@@ -39,11 +45,11 @@ import {
 
 import getImage from '../../assets/defaultImage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import backgroundTasks from 'react-native-background-actions'
 const AudioContext = createContext(null);
 
 export function AudioProvider({ children }) {
-  const player = useAudioPlaylist();
+  const player = useAudioPlaylist({updateInterval: 1000});
   const realStatus = useAudioPlaylistStatus(player);
 
   const [songs, setSongs] = useState([]);
@@ -76,6 +82,7 @@ export function AudioProvider({ children }) {
   const playerRef = useRef(null);
   const isShuffleRef = useRef(false);
   const loopRef = useRef("all");
+  const artworkIndexRef = useRef(-1);
 
   useEffect(() => {
     player.loop = loop;
@@ -91,7 +98,6 @@ export function AudioProvider({ children }) {
   }, [loop])
 
   const status = isSource ? realStatus : remoteStatus;
-
 
   useEffect(() => {
       playerRef.current = player;
@@ -129,9 +135,48 @@ export function AudioProvider({ children }) {
   }, [realStatus.currentIndex]);
 
 
+ useEffect(() => {
+    if (!isSource) return;
 
+    const listener = player.addListener("playlistStatusUpdate", async status => {
+        const song = songsRef.current[status.currentIndex];
 
-  useEffect(() => {
+        if (!song) return;
+
+        sendState({
+            type: "state",
+            index: status.currentIndex,
+            song: {
+                ...song,
+                artwork: song.artwork ? true : null
+            },
+            playing: status.playing,
+            position: status.currentTime,
+            duration: status.duration,
+            isShuffle: isShuffleRef.current,
+            isLoop: loopRef.current === "single"
+        });
+
+        if (artworkIndexRef.current !== status.currentIndex) {
+            artworkIndexRef.current = status.currentIndex;
+
+            const artwork = song.artwork
+                ? await getArtworkBase64(song.artwork)
+                : getImage();
+
+            setCurrentArtwork(artwork);
+
+            if (artwork) {
+              console.log("Sending artwork ", artwork.substring(0, 40));
+                queueArtwork(artwork);
+            }
+        }
+    });
+
+    return () => listener.remove();
+}, [player, isSource]);
+
+  /*useEffect(() => {
     if (!isSource) return;
 
     const interval = setInterval(() => {
@@ -153,7 +198,7 @@ export function AudioProvider({ children }) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isSource, currentSong]);
+  }, [isSource, currentSong]);*/
 
   useEffect(() => {
   
@@ -168,60 +213,58 @@ export function AudioProvider({ children }) {
       const type = await getType();
       setIsSource(!type);
       if (type == 0) {
-        startServer((cmd) => {
+
+         setCommandCallback(cmd => {
           console.log("Command: ", cmd);
-          console.log("type: ", cmd.type);
 
           if (cmd.type === "play") {
-            playerRef.current.play();
+              playerRef.current?.play();
           }
 
           if (cmd.type === "pause") {
-            playerRef.current.pause();
+              playerRef.current?.pause();
           }
 
-         // console.log(playerRef.current.currentStatus)
           if (cmd.type === "toggle") {
-            if(playingRef.current) {
-              playerRef.current.pause();
-            } else playerRef.current.play();
+              if (playingRef.current) {
+                  playerRef.current?.pause();
+              } else {
+                  playerRef.current?.play();
+              }
           }
 
           if (cmd.type === "toggleShuffle") {
-            toggleShuffle();
+              toggleShuffle();
           }
 
           if (cmd.type === "toggleLoop") {
-            toggleLoop();
+              toggleLoop();
           }
 
           if (cmd.type === "next") {
-            console.log("what");
-            nextSong();
+              nextSong();
           }
 
           if (cmd.type === "previous") {
-            prevSong();
+              prevSong();
           }
 
           if (cmd.type === "seek") {
-            playerRef.current.seekTo(cmd.position);
+              playerRef.current?.seekTo(cmd.position);
           }
 
           if (cmd.type === "playSong") {
-            playSong(cmd.index);
+              playSong(cmd.index);
           }
-        });
+      });
 
-        return () => {
-            stopServer();
-        };
+      startBackgroundServer();
+
+       
       } else {
         const ip = await AsyncStorage.getItem("@ip");
         console.log("IP: ", ip)
         connectToPhone(ip ?? "10.198.59.84", (state) => {
-          console.log("State: ", state);
-
           if (state.type === "artwork") {
             if (state.artwork)
               setCurrentArtwork(state.artwork);
@@ -280,7 +323,7 @@ export function AudioProvider({ children }) {
     }
   }
 
-  useEffect(() => {
+  /*useEffect(() => {
     async function loadArtwork() {
       if (!isSource) {
         //setCurrentArtwork(null);
@@ -299,7 +342,7 @@ export function AudioProvider({ children }) {
     }
 
     loadArtwork();
-  }, [currentSong, isSource]);
+  }, [currentSong, isSource]);*/
   
   
   useEffect(() => {
@@ -361,7 +404,7 @@ export function AudioProvider({ children }) {
       await setAudioModeAsync({
         playsInSilentMode: true,
         shouldPlayInBackground: true,
-        shouldRouteThroughEarpiece: true,
+        shouldRouteThroughEarpiece: false,
         interruptionMode: "doNotMix",
       });
     }

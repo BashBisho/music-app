@@ -4,9 +4,14 @@ import { getPort } from "./RemoteClient";
 
 let server = null;
 let client = null;
+let commandCallback = null;
 let isSendingArtwork = false;
 
-export async function startServer(onCommand) {
+export function setCommandCallback(callback) {
+    commandCallback = callback;
+}
+
+export async function startServer() {
     if (server) return;
 
     NetworkInfo.getIPAddress().then(async ip => {
@@ -17,6 +22,7 @@ export async function startServer(onCommand) {
     });
 
     const port = await getPort();
+
     server = TcpSocket.createServer(socket => {
         console.log("Tablet connected");
 
@@ -26,7 +32,6 @@ export async function startServer(onCommand) {
         }
 
         client = socket;
-
         let buffer = "";
 
         socket.on("data", data => {
@@ -42,7 +47,7 @@ export async function startServer(onCommand) {
 
                 try {
                     const command = JSON.parse(message);
-                    onCommand(command);
+                    commandCallback?.(command);
                 } catch (e) {
                     console.log("Invalid command:", e);
                 }
@@ -81,6 +86,7 @@ export async function startServer(onCommand) {
 
 export function sendState(state) {
     if (!client || isSendingArtwork) return;
+    console.log("Sending State ", state);
 
     try {
         client.write(JSON.stringify(state) + "\n");
@@ -92,39 +98,87 @@ export function sendState(state) {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-export async function sendArtwork(artwork) {
-    if (!client || !artwork || isSendingArtwork) return;
+let pendingArtwork = null;
+
+export function queueArtwork(artwork) {
+    pendingArtwork = artwork;
+}
+
+export async function processArtwork() {
+    if (!pendingArtwork || !client) return;
+
+    const artwork = pendingArtwork;
+    pendingArtwork = null;
 
     const currentClient = client;
-    isSendingArtwork = true;
-
-    const chunkSize = 4000;
+    const chunkSize = 32000;
 
     try {
         currentClient.write(JSON.stringify({
             type: "artwork-start"
         }) + "\n");
 
-        await sleep(10);
-
         for (let i = 0; i < artwork.length; i += chunkSize) {
             currentClient.write(JSON.stringify({
                 type: "artwork-chunk",
                 data: artwork.slice(i, i + chunkSize)
             }) + "\n");
+
+            await sleep(5);
         }
 
         currentClient.write(JSON.stringify({
             type: "artwork-end"
         }) + "\n");
+
+        console.log("ARTWORK SENT");
     } catch (e) {
-        console.log("Artwork write error:", e);
+        console.log("ARTWORK ERROR:", e);
+        if (client === currentClient) client = null;
+    }
+}
+
+export async function sendArtwork(artwork) {
+    if (!client || !artwork) return;
+
+    const currentClient = client;
+    const chunkSize = 4000;
+
+    console.log("ARTWORK START", artwork.length);
+
+    try {
+        currentClient.write(JSON.stringify({
+            type: "artwork-start"
+        }) + "\n");
+
+        console.log("ARTWORK START SENT");
+
+        for (let i = 0; i < artwork.length; i += chunkSize) {
+            const chunk = artwork.slice(i, i + chunkSize);
+
+            console.log("ARTWORK CHUNK", i, chunk.length);
+
+            currentClient.write(JSON.stringify({
+                type: "artwork-chunk",
+                data: chunk
+            }) + "\n");
+
+            await sleep(5);
+        }
+
+        console.log("ARTWORK ENDING");
+
+        currentClient.write(JSON.stringify({
+            type: "artwork-end"
+        }) + "\n");
+
+        console.log("ARTWORK SENT");
+    } catch (e) {
+        console.log("ARTWORK ERROR", e);
 
         if (client === currentClient) {
             client = null;
         }
-    } finally {
-        isSendingArtwork = false;
     }
 }
 
@@ -139,5 +193,6 @@ export function stopServer() {
         server = null;
     }
 
+    commandCallback = null;
     isSendingArtwork = false;
 }
