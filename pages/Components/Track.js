@@ -19,9 +19,9 @@ export default function Track({song, showImage=true, index, onPress}) {
                 </View>
             }
 
-            <View style={{display: "flex", height: 50, justifyContent: "flex-start", alignItems: "flex-start", flexDirection: "column"}}>
+            <View style={{display: "flex", height: 50, justifyContent: "center", alignItems: "flex-start", flexDirection: "column"}}>
                 <Text style={{fontSize: getFontSize(song.name, 18, 20, 8), lineHeight: 20, color: "#DDD", fontFamily: "SF-Bold"}}>{song.name}</Text>
-                <Text style={{fontSize: getFontSize(song.artist, 12, 20, 14), lineHeight: 14, color: "#DDD", fontFamily: "SF-Reg"}}>{song.artist}</Text>
+                <Text style={{fontSize: getFontSize(song.artist, 12, 20, 12), lineHeight: 14, color: "#DDD", fontFamily: "SF-Reg"}}>{song.artist}</Text>
             </View>
         </TouchableOpacity>
     )

@@ -1,28 +1,41 @@
 import TcpSocket from "react-native-tcp-socket";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-let socket;
-let artworkBuffer = "";
-export function getPort() {
-    return 8080;
-}
-
+let socket = null;
+let reconnectTimer = null;
 let callback = null;
 let currIp = null;
-export function connectToPhone(ip, onState) {
+let connecting = false;
+let artworkBuffer = "";
+
+export async function getPort() {
+    const port = parseFloat(await AsyncStorage.getItem("@port"));
+    return port ?? 5555;
+}
+
+export async function connectToPhone(ip, onState) {
     currIp = ip;
     callback = onState;
-    console.log(currIp, callback);
 
-    socket = TcpSocket.createConnection({
+    if (socket || connecting) return;
+
+    connecting = true;
+
+    const port = await getPort();
+    console.log("POTRT CLEINT: ", port);
+    const newSocket = TcpSocket.createConnection({
         host: ip,
-        port: getPort()
+        port
     }, () => {
+        connecting = false;
         console.log("Connected to phone");
     });
 
+    socket = newSocket;
+
     let buffer = "";
 
-    socket.on("data", data => {
+    newSocket.on("data", data => {
         buffer += data.toString();
 
         let newlineIndex;
@@ -47,7 +60,7 @@ export function connectToPhone(ip, onState) {
                 }
 
                 if (data.type === "artwork-end") {
-                    onState({
+                    callback?.({
                         type: "artwork",
                         artwork: artworkBuffer
                     });
@@ -56,33 +69,48 @@ export function connectToPhone(ip, onState) {
                     continue;
                 }
 
-                onState(data);
+                callback?.(data);
             } catch (e) {
                 console.log("Invalid state:", e);
             }
         }
     });
 
-    socket.on("error", error => {
-        scheduleReconnect();
+    newSocket.on("error", error => {
         console.log("Connection error:", error);
+
+        if (socket === newSocket) {
+            socket = null;
+            connecting = false;
+        }
+
+        scheduleReconnect();
     });
 
-    socket.on("close", () => {
-        scheduleReconnect();
+    newSocket.on("close", () => {
         console.log("Disconnected");
-        socket = null;
+
+        if (socket === newSocket) {
+            socket = null;
+            connecting = false;
+            scheduleReconnect();
+        }
     });
 }
 
 function scheduleReconnect() {
-    console.log("Scheduling ");
-    setTimeout(() => {
-        connectToPhone(currIp, callback);
-    }, 2000)
+    if (reconnectTimer) return;
 
+    console.log("Scheduling reconnect");
+
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+
+        if (!socket && currIp && callback) {
+            connectToPhone(currIp, callback);
+        }
+    }, 2000);
 }
-
 
 export function sendCommand(command) {
     if (!socket) return;
@@ -91,5 +119,10 @@ export function sendCommand(command) {
         socket.write(JSON.stringify(command) + "\n");
     } catch (e) {
         console.log("Command write error:", e);
+
+        if (socket) {
+            socket.destroy();
+            socket = null;
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Button, TouchableOpacity, Dimensions} from 'react-native';
+import { StyleSheet, Text, View, Button, TouchableOpacity, Dimensions, ScrollView} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAudioPlaylistStatus } from 'expo-audio'
 import { Directory,  File, Paths } from 'expo-file-system'; 
@@ -11,7 +11,7 @@ import Header from './Components/HeaderModern';
 import { AudioProvider, useAudio } from './Components/AudioContext';
 import getImage from '../assets/defaultImage';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
-import { format } from './Helpers/HelperFunctions';
+import { format , getFontSize } from './Helpers/HelperFunctions';
 
 import Animated, {
     useSharedValue,
@@ -20,14 +20,15 @@ import Animated, {
 
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
-import { getType } from './Helpers/AsyncManager';
+import getLyric from '../assets/defaultLyric';
 import { lockAsync, OrientationLock}  from 'expo-screen-orientation'
 
 export default function App({navigation}) {
 
     
-    const { player, songs, playSong, currentSong, togglePlay, prevSong, nextSong, seekTo, currentArtwork, remoteStatus} = useAudio();
+    const { player, songs, playSong, currentSong, togglePlay, prevSong, nextSong, seekTo, currentArtwork, remoteStatus, isShuffle, toggleShuffle, toggleLoop} = useAudio();
     const [sender, setSender] = useState(false);
+    const [showLyrics, setShowLyrics] = useState(false);
 
     useEffect(() => {
         lockAsync(OrientationLock.LANDSCAPE)
@@ -112,13 +113,31 @@ export default function App({navigation}) {
             }
 
 
-            <View style={{display: "flex", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "row", width: width/1.5, paddingTop: 40}}>
+            <View style={{display: "flex", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "row", width: width/1.5, paddingTop: 40, height: h/1.2, gap: showLyrics*10}}>
                 <Image style={{width: h/1.2, height: h/1.2, borderRadius: 10, marginBottom: 10}}source={play} /> 
-                <View style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                    <Text style={{color: "#FFF", fontSize: 32, fontFamily: "SF-Bold", lineHeight: 36, textAlign: "center", width: "80%"}}>{currentSong?.name}</Text>
-                    <Text style={{color: "#888", fontSize: 24, fontFamily: "SF-Reg", lineHeight: 28, marginBottom: 30, textAlign: "center", width: "80%"}} >{currentSong?.artist}</Text>
+                <View style={{display: "flex", justifyContent: (showLyrics ? "flex-start" : "center"), alignItems: "center", height: h/1.2, marginBottom: 10}}>
+                   
+                    <TouchableOpacity onPress={() => setShowLyrics(s => !s)} style={{position: "absolute", top: 0, right: 0, width: 35, height: 35, borderRadius: 5, backgroundColor: showLyrics ? "#FFFFFF11" : "#FFFFFF00", display: "flex", justifyContent: "center", alignItems: "center"}}>
+                            <FontAwesome6 size={16} color={"#fff"} name={"chalkboard"} iconStyle="solid" />
+                    </TouchableOpacity>
 
+                    {
+                    showLyrics ? 
+                    <>
+                        <View style={{width: 400, height: h/1.2, justifyContent: "flex-start", alignItems: "flex-start"}}>
+                        <ScrollView  nestedScrollEnabled style={{ height: h/1.2, width: 350, backgroundColor: "#FFFFFF11", borderRadius: 5}}>
+                            <Text style={{fontSize: 24, fontFamily: "SF-Medium", color: "#FFFFFFAA", marginLeft: 10, marginVertical: 10}}>{getLyric().split("\n").join("\n\n")}</Text>
+                        </ScrollView>
+                        </View>
+                    </>
+                    :
+                    <>
+                     <Text style={{color: "#FFF", fontSize: getFontSize(currentSong?.name, 32, 10, 2.7), fontFamily: "SF-Bold", lineHeight: 36, textAlign: "center", width: "80%"}}>{currentSong?.name}</Text>
+                    <Text style={{color: "#888", fontSize:  getFontSize(currentSong?.artist, 24, 10, 4), fontFamily: "SF-Reg", lineHeight: 28, marginBottom: 30, textAlign: "center", width: "80%"}} >{currentSong?.artist}</Text>
                     <View style={{display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-around", width: "70%", marginBottom: 20}}>
+                        <TouchableOpacity onPress={() => toggleLoop()} style={{width: 35, height: 35, borderRadius: 5, backgroundColor: remoteStatus.isLoop ? "#FFFFFF11" : "#FFFFFF00", display: "flex", justifyContent: "center", alignItems: "center"}}>
+                            <FontAwesome6 size={16} color={"#fff"} name={"repeat"} iconStyle="solid" />
+                        </TouchableOpacity>
                         <TouchableOpacity onPress={() => prevSong()} style={{width: 35, height: 35, borderRadius: 5, backgroundColor: "#FFFFFF11", display: "flex", justifyContent: "center", alignItems: "center"}}>
                             <FontAwesome6 size={24} color={"#fff"} name={"backward-step"} iconStyle="solid" />
                         </TouchableOpacity>
@@ -129,6 +148,10 @@ export default function App({navigation}) {
                         <TouchableOpacity  onPress={() => nextSong()} style={{width: 35, height: 35, borderRadius: 5, backgroundColor: "#FFFFFF11", display: "flex", justifyContent: "center", alignItems: "center"}}>
                             <FontAwesome6 size={24} color={"#fff"} name={"forward-step"} iconStyle="solid" />
                         </TouchableOpacity>
+                        <TouchableOpacity onPress={() => toggleShuffle()} style={{width: 35, height: 35, borderRadius: 5, backgroundColor:  remoteStatus.isShuffle ? "#FFFFFF11" : "#FFFFFF00", display: "flex", justifyContent: "center", alignItems: "center"}}>
+                            <FontAwesome6 size={16} color={"#fff"} name={"shuffle"} iconStyle="solid" />
+                        </TouchableOpacity>
+                        
                     </View>
                     <GestureDetector gesture={gesture}>
                             <View style={{width: "80%", height: 30, justifyContent: "center"}}>
@@ -161,6 +184,9 @@ export default function App({navigation}) {
                                 {format(remoteStatus.duration)}
                             </Text>
                         </View>
+                        </>
+                    }
+                    
                 </View>
             </View>
 

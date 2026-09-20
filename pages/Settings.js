@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Button, TouchableOpacity, FlatList} from 'react-native';
+import { StyleSheet, Text, View, Button, TouchableOpacity, FlatList, TextInput} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Directory,  File, Paths } from 'expo-file-system'; 
 import { useState, useEffect, useRef } from 'react';
@@ -15,16 +15,36 @@ import { clearMusicCache } from './Helpers/SongManager';
 import getImage from '../assets/defaultImage';
 import Player from './Components/Player';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NetworkInfo } from 'react-native-network-info';
 export default function Settings({navigation}) {
 
-    const { player, status, getSongs, currentSong, currentArtwork } = useAudio();
+    const { player, status, getSongs, currentSong, currentArtwork, isSource } = useAudio();
     const [ paths, setPths ] = useState([]);
     const [sender, setSender] = useState(true);
+    const [ip, setIp] = useState("")
+    const [port, setPort] = useState("")
 
     const blurTargetRef = useRef(null);
 
-    
+    useEffect(() => {
+        async function getIP() {
+            if(isSource) {
+                const address = await NetworkInfo.getIPV4Address();
+                console.log("AADDD: ", address)
+                setIp(address);
+            } else {
+                const address = await AsyncStorage.getItem("@ip");
+                setIp(address);
+            }
+
+            const p = await AsyncStorage.getItem("@port");
+            p && setPort(p);
+        }
+
+        getIP();
+    }, []);
+
     const pickFolder = async () => {
         const result = await Directory.pickDirectoryAsync();
 
@@ -109,7 +129,8 @@ export default function Settings({navigation}) {
                 </TouchableOpacity>
             </View>
 
-             <View style={{width: "90%", display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginBottom: 50}}>
+
+            <View style={{width: "90%", display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row"}}>
                 <View style={{display: "flex", justifyContent: "center", alignItems: "flex-start", flexDirection: "column"}}>
                     <Text style={{fontFamily: "SF-Bold", fontSize: 20, color: "#FFF"}}>Clear Cache</Text>
                     <Text  style={{fontFamily: "SF-Reg", fontSize: 16, color: "#FFF"}}>Rebuild all music cache</Text>
@@ -118,6 +139,26 @@ export default function Settings({navigation}) {
                     <FontAwesome6 name={"trash-can"} size={16} color={"#fff"} iconStyle='solid' />
                 </TouchableOpacity>
             </View>
+
+            <View style={{width: "90%", height: 5, borderRadius: 2, backgroundColor: "#FFFFFF11", marginVertical: 20}} />
+
+
+             <View style={{width: "90%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap:5, flexDirection: "row", marginBottom: 0}}>
+                <View style={{width: "75%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexDirection: "column",  gap: 10}}>
+                    <Text style={{fontFamily: "SF-Bold", fontSize: 20, color: "#FFF"}}>Server IP</Text>
+                    <TextInput editable={!isSource} value={ip}  onChangeText={(text) => {setIp(text); AsyncStorage.setItem("@ip", text)}} textAlignVertical='center' placeholder='192.168.xxx.xxx'  style={{width: "100%", paddingBottom: 8, color:"#fff", paddingLeft: 5, height: 40,justifyContent: "center", alignItems: "center", borderColor: "#FFFfff00", fontSize: 20, fontFamily: "SF-Medium", borderWidth: 2, borderRadius: 3, backgroundColor: (!isSource ? "#FFFFFF44" : "#FFFFFF11")}} />
+
+                </View>
+                 <View style={{width: "20%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexDirection: "column", gap: 10}}>
+                    <Text style={{fontFamily: "SF-Bold", fontSize: 20, color: "#FFF"}}>Port</Text>
+                    <TextInput value={port} onChangeText={(text) => {setPort(text); AsyncStorage.setItem("@port", text)}} textAlignVertical='center' placeholder='xxxx'  style={{width: "100%", paddingBottom: 8, color:"#fff", paddingLeft: 5, height: 40,justifyContent: "center", alignItems: "center", borderColor: "#FFFfff00", fontSize: 20, fontFamily: "SF-Medium", borderWidth: 2, borderRadius: 3, backgroundColor: "#FFFFFF44"}} />
+
+                </View>
+                
+            </View>
+
+            <View style={{width: "90%", height: 5, borderRadius: 2, backgroundColor: "#FFFFFF11", marginVertical: 20}} />
+
 
             <View style={{width: "90%"}}>
                 <Text style={{fontFamily: "SF-Bold", fontSize: 20, color: "#FFF", alignSelf: "flex-start", width: "90%"}}>Music Folders: </Text>

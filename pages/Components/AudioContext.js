@@ -28,7 +28,8 @@ import { getAllSongs } from '../Helpers/SongManager';
 import {
   startServer,
   sendState,
-  sendArtwork
+  sendArtwork,
+  stopServer
 } from '../Helpers/RemoteServer';
 
 import {
@@ -37,6 +38,7 @@ import {
 } from '../Helpers/RemoteClient';
 
 import getImage from '../../assets/defaultImage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AudioContext = createContext(null);
 
@@ -59,17 +61,21 @@ export function AudioProvider({ children }) {
   const [remoteStatus, setRemoteStatus] = useState({
     playing: false,
     currentTime: 0,
-    duration: 0
+    duration: 0,
+    isShuffle: false,
+    isLoop: false
   });
 
 
   const songsRef = useRef([]);
+  const originalSongsRef = useRef([]);
+
   const currentIndexRef = useRef(-1);
   const playingRef = useRef(false);
   const statusRef = useRef(realStatus);
   const playerRef = useRef(null);
- 
-
+  const isShuffleRef = useRef(false);
+  const loopRef = useRef("all");
 
   useEffect(() => {
     player.loop = loop;
@@ -77,7 +83,13 @@ export function AudioProvider({ children }) {
   useEffect(() => {
       playingRef.current = realStatus.playing;
   }, [realStatus.playing]);
-  
+  useEffect(() => {
+    isShuffleRef.current = isShuffle;
+  }, [isShuffle])
+  useEffect(() => {
+    loopRef.current = loop;
+  }, [loop])
+
   const status = isSource ? realStatus : remoteStatus;
 
 
@@ -88,6 +100,10 @@ export function AudioProvider({ children }) {
   useEffect(() => {
     songsRef.current = songs;
   }, [songs]);
+
+  useEffect(() => {
+    originalSongsRef.current = originalSongs;
+  }, [originalSongs]);
   
   useEffect(() => {
     statusRef.current = realStatus;
@@ -130,7 +146,9 @@ export function AudioProvider({ children }) {
         },
         playing: status.playing,
         position: status.currentTime,
-        duration: status.duration
+        duration: status.duration,
+        isShuffle: isShuffleRef.current,
+        isLoop: loopRef.current == "single"
       });
     }, 1000);
 
@@ -194,8 +212,14 @@ export function AudioProvider({ children }) {
             playSong(cmd.index);
           }
         });
+
+        return () => {
+            stopServer();
+        };
       } else {
-        connectToPhone("192.168.1.20", (state) => {
+        const ip = await AsyncStorage.getItem("@ip");
+        console.log("IP: ", ip)
+        connectToPhone(ip ?? "10.198.59.84", (state) => {
           console.log("State: ", state);
 
           if (state.type === "artwork") {
@@ -216,7 +240,9 @@ export function AudioProvider({ children }) {
           setRemoteStatus({
             playing: state.playing,
             currentTime: state.position,
-            duration: state.duration
+            duration: state.duration,
+            isShuffle: state.isShuffle,
+            isLoop: state.isLoop
           });
         });
       }
@@ -290,11 +316,13 @@ export function AudioProvider({ children }) {
       },
       playing: realStatus.playing,
       position: realStatus.currentTime,
-      duration: realStatus.duration
+      duration: realStatus.duration,
+      isShuffle: isShuffleRef.current,
+      isLoop: loopRef.current == "single"
     });
   }, [
     currentSong,
-    currentIndex
+    currentIndex,
   ]);
 
   useEffect(() => {
@@ -310,7 +338,9 @@ export function AudioProvider({ children }) {
       },
       playing: realStatus.playing,
       position: realStatus.currentTime,
-      duration: realStatus.duration
+      duration: realStatus.duration,
+      isShuffle: isShuffleRef.current,
+      isLoop: loopRef.current == "single"
     });
   }, [
     realStatus.playing
@@ -395,7 +425,6 @@ export function AudioProvider({ children }) {
     if(original) setShuffle(false);
 
     newPlaylist.forEach(song => playerRef.current.add({uri: song.uri, name: `${song.name} - ${song.artist}`}));
-    console.log("SOURCES: ", playerRef.current.sources)
     playSong(index);
   }
 
@@ -506,15 +535,18 @@ export function AudioProvider({ children }) {
       return;
     }
 
-    if(isShuffle) {
+    
+    const currentSong = songsRef.current[playerRef.current.currentIndex];
+    console.log("SHUFFLING: ", currentSong)
+    if(isShuffleRef.current) {
 
-      const currT = realStatus.currentTime;
-      setAndPlay(originalSongs, originalSongs.findIndex(song => song.uri == currentSong.uri));
+      const currT = playerRef.current.currentTime;
+      setAndPlay(originalSongsRef.current, originalSongsRef.current.findIndex(song => song.uri == currentSong.uri));
       seekTo(currT);
 
     } else {
-      const currT = realStatus.currentTime;
-      const newSongs = shuffle(originalSongs);
+      const currT = playerRef.current.currentTime;
+      const newSongs = shuffle(originalSongsRef.current);
       
       setAndPlay(newSongs, newSongs.findIndex(song => song.uri == currentSong.uri));
       seekTo(currT);
@@ -551,7 +583,7 @@ export function AudioProvider({ children }) {
         remoteStatus,
         toggleLoop,
         toggleShuffle,
-
+        isSource, 
         loading,
         isSource,
         playSong,

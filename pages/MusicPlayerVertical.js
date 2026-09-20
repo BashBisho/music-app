@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Button, TouchableOpacity, Dimensions} from 'react-native';
+import { StyleSheet, Text, View, Button, TouchableOpacity, Dimensions, ScrollView} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAudioPlaylistStatus } from 'expo-audio'
 import { Directory, File, Paths } from 'expo-file-system'; 
@@ -22,7 +22,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import { getType } from './Helpers/AsyncManager';
 import { lockAsync, OrientationLock}  from 'expo-screen-orientation'
-
+import getLyric from '../assets/defaultLyric';
 export default function App({navigation}) {
 
     
@@ -116,11 +116,12 @@ export default function App({navigation}) {
             />
             <StatusBar style='light'/>
             <Header name={isFromAlbum ? currentSong.album : "Now Playing"} right={{name: "slash", backgroundColor: "#CC2936", color: "#FFF", onPress: () => clearMusicCache()}}  left={{name: "chevron-left", backgroundColor: "#FFFFFF00", color: "#FFF", iconSize: 24, onPress: () => { if(navigation.canGoBack() ) navigation.goBack()} }}/>
-            <View style={{display: "flex", flex: 1, justifyContent: "flex-start", alignItems: "center", flexDirection: "column", width: "100%", paddingTop: 40}}>
+            <ScrollView nestedScrollEnabled contentContainerStyle={{justifyContent: "flex-start", alignItems: "center"}} showsVerticalScrollIndicator={false}  snapToOffsets={[0, 40 + width*0.7 + 36 + 28 + 100]} style={{display: "flex", flex: 1,  flexDirection: "column", width: "100%", paddingTop: 40}}>
                 <Image style={{width: width*0.7, height: width*0.7, borderRadius: 10, marginBottom: 10}} source={play} /> 
                 <Text style={{color: "#FFF", fontSize: getFontSize(currentSong?.name, 32, 10, 2.7), fontFamily: "SF-Bold", lineHeight: 36, textAlign: "center", width: "80%"}}>{currentSong?.name}</Text>
                 <Text style={{color: "#888", fontSize: getFontSize(currentSong?.artist, 24, 10, 4), fontFamily: "SF-Reg", lineHeight: 28, marginBottom: 30, textAlign: "center", width: "80%"}} >{currentSong?.artist}</Text>
 
+            
                 <View style={{display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-around", width: "70%", marginBottom: 20}}>
                     <TouchableOpacity onPress={() => toggleLoop()} style={{width: 35, height: 35, borderRadius: 5, backgroundColor: status.loop == 'single' ? "#FFFFFF11" : "#FFFFFF00", display: "flex", justifyContent: "center", alignItems: "center"}}>
                         <FontAwesome6 size={16} color={"#fff"} name={"repeat"} iconStyle="solid" />
@@ -139,7 +140,7 @@ export default function App({navigation}) {
                         <FontAwesome6 size={16} color={"#fff"} name={"shuffle"} iconStyle="solid" />
                     </TouchableOpacity>
                 </View>
-                <GestureDetector gesture={gesture}>
+                    <GestureDetector gesture={gesture}>
                         <View style={{width: "80%", height: 30, justifyContent: "center"}}>
                             <View style={{
                                 width: "100%",
@@ -169,7 +170,15 @@ export default function App({navigation}) {
                             {format(status.duration)}
                         </Text>
                     </View>
-            </View>
+                    <View style={{height: 80}}/>
+                    <View style={{display: "flex", width: "80%", justifyContent: 'flex-start', alignItems: "flex-start", flexDirection: "column", gap: 10}}>
+                        <Text style={{fontSize: 24, fontFamily: "SF-Bold", color: "#FFF"}}>Lyrics</Text>
+                        <ScrollView  nestedScrollEnabled style={{height: 300, width: "100%", backgroundColor: "#FFFFFF11", borderRadius: 5, marginBottom: 100}}>
+                            <Text style={{fontSize: 14, fontFamily: "SF-Medium", color: "#FFFFFFAA", marginLeft: 10, marginVertical: 10}}>{getLyric()}</Text>
+                        </ScrollView>
+                        
+                    </View>
+            </ScrollView>
         </View>
     );
 }

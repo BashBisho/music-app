@@ -5,6 +5,7 @@ export function format(time) {
 }
 
 export function getFontSize(text, fontSize = 24, startSize=10, multiplier=3.8) {
-
+    if(!text) return fontSize;
+    
     return text.length > startSize ? fontSize - text.length/multiplier : fontSize;
 }
