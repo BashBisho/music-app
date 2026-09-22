@@ -48,4 +48,3 @@ export async function getType() {
 export async function setType(t) {
     await AsyncStorage.setItem("@type", JSON.stringify(t));
 }
-

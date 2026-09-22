@@ -12,7 +12,7 @@ import { AudioProvider, useAudio } from './Components/AudioContext';
 import getImage from '../assets/defaultImage';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 import { format, getFontSize } from './Helpers/HelperFunctions';
-
+import Lyrics from './Components/Lyrics'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -23,11 +23,16 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { getType } from './Helpers/AsyncManager';
 import { lockAsync, OrientationLock}  from 'expo-screen-orientation'
 import getLyric from '../assets/defaultLyric';
-export default function App({navigation}) {
+import { findSpotifyTrackId, getLyrics } from './Helpers/SpotifyScraper';
 
+export default function App({navigation}) {
     
     const { player, songs, playSong, currentSong, togglePlay, prevSong, nextSong, seekTo, currentArtwork, isShuffle, toggleShuffle, toggleLoop} = useAudio();
     const [sender, setSender] = useState(false);
+    const [active, setActive] = useState(false);
+    const [lyrics, setLyrics] = useState("");
+    const [displayMessage, setDisplayMessage] = useState("Lyrics not Activated");
+
 
     useEffect(() => {
         async function gt() {
@@ -48,6 +53,27 @@ export default function App({navigation}) {
 
     const barWidth = width * 0.8;
     const progress = useSharedValue(0);
+
+   
+
+    useEffect(() => {
+        if(active) fetchLyrics();
+        else {
+            setLyrics("");
+            setDisplayMessage("Lyrics not Activated");
+        }
+    }, [currentSong, active]);
+
+    async function fetchLyrics() {
+        setDisplayMessage("Loading");
+        setLyrics("")
+
+        const songID  = await findSpotifyTrackId(currentSong);
+        console.log(currentSong.name, " => ", songID);
+        const clyrics = await getLyrics(songID);
+        console.log(clyrics);
+        setLyrics(clyrics);
+    }
 
     useEffect(() => {
         if (status.duration > 0) {
@@ -172,10 +198,20 @@ export default function App({navigation}) {
                     </View>
                     <View style={{height: 80}}/>
                     <View style={{display: "flex", width: "80%", justifyContent: 'flex-start', alignItems: "flex-start", flexDirection: "column", gap: 10}}>
-                        <Text style={{fontSize: 24, fontFamily: "SF-Bold", color: "#FFF"}}>Lyrics</Text>
+                        <View style={{display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexDirection: "row"}}>
+                            <Text style={{fontSize: 24, fontFamily: "SF-Bold", color: "#FFF"}}>Lyrics</Text>
+                            <TouchableOpacity onPress={() => setActive(a => !a)} style={{display: "flex", justifyContent: "center", alignItems: "center", width: 30, height: 30, borderRadius: 2, backgroundColor: (!active ? "#FFFFFF44" : "#FFFFFF11") }}>
+                                <FontAwesome6 size={15} color={"#FFF"} name={(active ? "handshake-angle" : "feather")} iconStyle="solid" />
+                            </TouchableOpacity>
+                        </View>
+                        {!lyrics && 
                         <ScrollView  nestedScrollEnabled style={{height: 300, width: "100%", backgroundColor: "#FFFFFF11", borderRadius: 5, marginBottom: 100}}>
-                            <Text style={{fontSize: 14, fontFamily: "SF-Medium", color: "#FFFFFFAA", marginLeft: 10, marginVertical: 10}}>{getLyric()}</Text>
+                            <Text style={{fontSize: 20, fontFamily: "SF-Medium", color: "#FFFFFFAA", marginLeft: 10, marginVertical: 10}}>{displayMessage}</Text>
                         </ScrollView>
+                        }  
+                        {lyrics &&
+                            <Lyrics style={{height: 300, marginBottom: 100}} lyrics={lyrics} status={status} />
+                        } 
                         
                     </View>
             </ScrollView>

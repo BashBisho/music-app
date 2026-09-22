@@ -12,6 +12,7 @@ import { AudioProvider, useAudio } from './Components/AudioContext';
 import getImage from '../assets/defaultImage';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 import { format , getFontSize } from './Helpers/HelperFunctions';
+import { findSpotifyTrackId, getLyrics } from './Helpers/SpotifyScraper';
 
 import Animated, {
     useSharedValue,
@@ -22,6 +23,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import getLyric from '../assets/defaultLyric';
 import { lockAsync, OrientationLock}  from 'expo-screen-orientation'
+import Lyrics from './Components/Lyrics'
 
 export default function App({navigation}) {
 
@@ -29,6 +31,9 @@ export default function App({navigation}) {
     const { player, songs, playSong, currentSong, togglePlay, prevSong, nextSong, seekTo, currentArtwork, remoteStatus, isShuffle, toggleShuffle, toggleLoop} = useAudio();
     const [sender, setSender] = useState(false);
     const [showLyrics, setShowLyrics] = useState(false);
+    const [lyrics, setLyrics] = useState("");
+    ؤ
+    const lyricsName = useRef("");
 
     useEffect(() => {
         lockAsync(OrientationLock.LANDSCAPE)
@@ -48,6 +53,36 @@ export default function App({navigation}) {
             progress.value = remoteStatus.currentTime / remoteStatus.duration;
         }
     }, [remoteStatus.currentTime, remoteStatus.duration]);
+
+     useEffect(() => {
+        if(showLyrics) fetchLyrics();
+     }, [currentSong]);
+
+    async function fetchLyrics() {
+        setLyrics("");
+
+        const songID  = await findSpotifyTrackId(currentSong);
+        console.log(currentSong.name, " => ", songID);
+        const clyrics = await getLyrics(songID);
+        console.log(clyrics);
+        setLyrics(clyrics);
+    }
+
+    async function toggleLyrics() {
+
+        if(showLyrics) {
+            setShowLyrics(false);
+            return;
+        }
+
+        setShowLyrics(true);
+        const key = `${currentSong.artist} - ${currentSong.name}`.toLowerCase();
+
+        if(lyricsName.current == key) return;
+        lyricsName.current = key;
+
+        fetchLyrics();
+    }
 
     const seekAt = (x) => {
         const value = Math.max(0, Math.min(x / barWidth, 1));
@@ -117,19 +152,25 @@ export default function App({navigation}) {
                 <Image style={{width: h/1.2, height: h/1.2, borderRadius: 10, marginBottom: 10}}source={play} /> 
                 <View style={{display: "flex", justifyContent: (showLyrics ? "flex-start" : "center"), alignItems: "center", height: h/1.2, marginBottom: 10}}>
                    
-                    <TouchableOpacity onPress={() => setShowLyrics(s => !s)} style={{position: "absolute", top: 0, right: 0, width: 35, height: 35, borderRadius: 5, backgroundColor: showLyrics ? "#FFFFFF11" : "#FFFFFF00", display: "flex", justifyContent: "center", alignItems: "center"}}>
+                    <TouchableOpacity onPress={() => toggleLyrics()} style={{position: "absolute", top: 0, right: 0, width: 35, height: 35, borderRadius: 5, backgroundColor: showLyrics ? "#FFFFFF11" : "#FFFFFF00", display: "flex", justifyContent: "center", alignItems: "center"}}>
                             <FontAwesome6 size={16} color={"#fff"} name={"chalkboard"} iconStyle="solid" />
                     </TouchableOpacity>
 
                     {
                     showLyrics ? 
-                    <>
-                        <View style={{width: 400, height: h/1.2, justifyContent: "flex-start", alignItems: "flex-start"}}>
+                    <View style={{width: 400, height: h/1.2, justifyContent: "flex-start", alignItems: "flex-start"}}>
+                        {
+                    !lyrics || lyrics.Body.type == "Static" ?
                         <ScrollView  nestedScrollEnabled style={{ height: h/1.2, width: 350, backgroundColor: "#FFFFFF11", borderRadius: 5}}>
-                            <Text style={{fontSize: 24, fontFamily: "SF-Medium", color: "#FFFFFFAA", marginLeft: 10, marginVertical: 10}}>{getLyric().split("\n").join("\n\n")}</Text>
+                            <Text style={{fontSize: 24, fontFamily: "SF-Medium", color: "#FFFFFFAA", marginLeft: 10, marginVertical: 10}}>{lyrics ? getLyric().split("\n").join("\n\n") : "Loading"}</Text>
                         </ScrollView>
-                        </View>
-                    </>
+                
+                    :
+                        
+                        <Lyrics lyrics={lyrics} status={remoteStatus} style={{width: 350}} />
+                    }
+                    </View>
+
                     :
                     <>
                      <Text style={{color: "#FFF", fontSize: getFontSize(currentSong?.name, 32, 10, 2.7), fontFamily: "SF-Bold", lineHeight: 36, textAlign: "center", width: "80%"}}>{currentSong?.name}</Text>

@@ -24,6 +24,7 @@ export default function Settings({navigation}) {
     const [sender, setSender] = useState(true);
     const [ip, setIp] = useState("")
     const [port, setPort] = useState("")
+    const [token, setToken] = useState("")
 
     const blurTargetRef = useRef(null);
 
@@ -40,6 +41,10 @@ export default function Settings({navigation}) {
 
             const p = await AsyncStorage.getItem("@port");
             p && setPort(p);
+
+            const t = await AsyncStorage.getItem("@token");
+            t && setToken(t);
+
         }
 
         getIP();
@@ -143,7 +148,7 @@ export default function Settings({navigation}) {
             <View style={{width: "90%", height: 5, borderRadius: 2, backgroundColor: "#FFFFFF11", marginVertical: 20}} />
 
 
-             <View style={{width: "90%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap:5, flexDirection: "row", marginBottom: 0}}>
+            <View style={{width: "90%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap:5, flexDirection: "row", marginBottom: 20}}>
                 <View style={{width: "75%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexDirection: "column",  gap: 10}}>
                     <Text style={{fontFamily: "SF-Bold", fontSize: 20, color: "#FFF"}}>Server IP</Text>
                     <TextInput editable={!isSource} value={ip}  onChangeText={(text) => {setIp(text); AsyncStorage.setItem("@ip", text)}} textAlignVertical='center' placeholder='192.168.xxx.xxx'  style={{width: "100%", paddingBottom: 8, color:"#fff", paddingLeft: 5, height: 40,justifyContent: "center", alignItems: "center", borderColor: "#FFFfff00", fontSize: 20, fontFamily: "SF-Medium", borderWidth: 2, borderRadius: 3, backgroundColor: (!isSource ? "#FFFFFF44" : "#FFFFFF11")}} />
@@ -154,7 +159,11 @@ export default function Settings({navigation}) {
                     <TextInput value={port} onChangeText={(text) => {setPort(text); AsyncStorage.setItem("@port", text)}} textAlignVertical='center' placeholder='xxxx'  style={{width: "100%", paddingBottom: 8, color:"#fff", paddingLeft: 5, height: 40,justifyContent: "center", alignItems: "center", borderColor: "#FFFfff00", fontSize: 20, fontFamily: "SF-Medium", borderWidth: 2, borderRadius: 3, backgroundColor: "#FFFFFF44"}} />
 
                 </View>
-                
+            </View>
+
+            <View style={{width: "90%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexDirection: "column",  gap: 10}}>
+                <Text style={{fontFamily: "SF-Bold", fontSize: 20, color: "#FFF"}}>Lyrics Token</Text>
+                <TextInput value={token}  onChangeText={(text) => {setToken(text); AsyncStorage.setItem("@token", text)}} textAlignVertical='center' placeholder='sl_sk...'  style={{width: "100%", paddingBottom: 8, color:"#fff", paddingLeft: 5, height: 40,justifyContent: "center", alignItems: "center", borderColor: "#FFFfff00", fontSize: 20, fontFamily: "SF-Medium", borderWidth: 2, borderRadius: 3, backgroundColor: "#FFFFFF44"}} />
             </View>
 
             <View style={{width: "90%", height: 5, borderRadius: 2, backgroundColor: "#FFFFFF11", marginVertical: 20}} />

@@ -8,6 +8,11 @@ import MusicPlayer from './pages/MusicPlayer'
 import { AudioProvider } from './pages/Components/AudioContext';
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen';
+import { LogBox } from 'react-native';
+
+LogBox.ignoreLogs([
+  'VirtualizedLists should never be nested inside plain ScrollViews'
+]);
 
 import Header from './pages/Components/Header'
 
